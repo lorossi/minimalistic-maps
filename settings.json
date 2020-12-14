@@ -1,62 +1,46 @@
 {
   "image": {
     "width": 1500,
-    "height": 1200,
-    "city": "Milano",
+    "height": 1500,
+    "output_path": "output/",
     "main_font": "resources/Roboto-Light.ttf",
     "italic_font": "resources/Roboto-LightItalic.ttf",
     "colors": {
-          "primary": "#EBEBEB",
-          "secondary": "#1F1F1F",
-          "boundary": "#EBEBEB37",
-          "fill": "#721817"
+          "primary": "#EAF6FF",
+          "secondary": "#232528",
+          "fill": "#FFA400",
+          "text": "#EAF6FF64",
+          "watermark": "#EAF6FF32"
       }
   },
-  "queries" : [
+  "cities": [
+    "Paris", "Berlin", "Oslo", "London", "Rome", "Moscow", "Madrid", "Vienna", "Budapest", "Prague", "Brussels"
+  ],
+  "queries": [
     {
       "primary_query": "natural",
-      "secondary_query": "tree",
-      "subtitle": "e i suoi %n alberi"
+      "secondary_query": ["tree", "wood", "tree_row"],
+      "subtitle": "trees"
     },
     {
       "primary_query": "amenity",
       "secondary_query": ["bar", "cafe", "fast_food", "ice_cream", "pub", "restaurant"],
-      "subtitle": "e i suoi %n posti in cui mangiare"
+      "subtitle": "places to eat"
     },
     {
       "primary_query": "amenity",
       "secondary_query": "drinking_water",
-      "subtitle": "e le sue %n fontanelle dell'acqua"
+      "subtitle": "drinking fountains"
     },
     {
       "primary_query": "amenity",
       "secondary_query": "bench",
-      "subtitle": "e le sue %n panchine"
+      "subtitle": "benches"
     },
     {
-      "primary_query": "amenity",
-      "secondary_query": ["school", "college", "kindergarten", "university"],
-      "subtitle": "e le sue %n scuole"
-    },
-    {
-      "primary_query": "amenity",
-      "secondary_query": "library",
-      "subtitle": "e le sue %n biblioteche"
-    },
-    {
-      "primary_query": "amenity",
-      "secondary_query": "fuel",
-      "subtitle": "e le sue %n stazioni di rifornimento"
-    },
-    {
-      "primary_query": "amenity",
-      "secondary_query": "atm",
-      "subtitle": "e i suoi %n bancomat"
-    },
-    {
-      "primary_query": "amenity",
-      "secondary_query": "cinema",
-      "subtitle": "e i suoi %n cinema"
+      "primary_query": "highway",
+      "secondary_query": "traffic_signals",
+      "subtitle": "traffic lights"
     }
   ]
 }
