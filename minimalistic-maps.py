@@ -1,8 +1,10 @@
+# Made by Lorenzo Rossi
+# www.lorenzoros.si
+
 import json
 import time
 import logging
 
-from shutil import rmtree
 from pathlib import Path
 from PIL import Image, ImageFont, ImageDraw
 from OSMPythonTools.nominatim import Nominatim
@@ -10,10 +12,10 @@ from OSMPythonTools.overpass import overpassQueryBuilder, Overpass
 
 
 # constrains a value
-def constrain(value, min, max):
-    if value < min:
+def constrain(value, min=None, max=None):
+    if min and value < min:
         value = min
-    elif value > max:
+    elif max and value > max:
         value = max
     return value
 
@@ -88,14 +90,22 @@ class MinimalMap:
             elif self.element_type == "way":
                 # this is going to be fun, it's a polygon!
                 result_json = result.toJSON()["elements"]
-                for r in result_json:
-                    self.json_data.append(r["geometry"])
+                for way in result_json:
+                    self.json_data.append(way["geometry"])
+
+            elif self.element_type == "relation":
+                # this is going to be even funnier!
+                result_json = result.toJSON()["elements"]
+                for relation in result_json:
+                    for member in relation["members"]:
+                        if "geometry" in member:
+                            self.json_data.append(member["geometry"])
 
         if self.element_type == "node":
             lat = sorted([x["lat"] for x in self.json_data])
             lon = sorted([x["lon"] for x in self.json_data])
 
-        elif self.element_type == "way":
+        elif self.element_type == "way" or self.element_type == "relation":
             lat = []
             lon = []
             # i'm sure there's a list comprehension for this
@@ -107,6 +117,11 @@ class MinimalMap:
             lat = sorted(lat)
             lon = sorted(lon)
 
+        # if there is only one item, we need to add a way to prevent a sure
+        #   crash... here we go
+        if not lat or not len:
+            return False
+
         self.bbox = {
             "north": lat[0],
             "south": lat[-1],
@@ -116,14 +131,15 @@ class MinimalMap:
             "width": lon[-1] - lon[0]
         }
 
+        return True
 
-    def createImage(self, fill="red", subtitle="", map_scl=.9):
+    def createImage(self, fill="red", subtitle="", fill_type="fill", map_scl=.9):
         if len(self.json_data) > 10000:
-            circles_radius = 0.5
-        elif len(self.json_data) > 1000:
             circles_radius = 2
+        elif len(self.json_data) > 1000:
+            circles_radius = 4
         else:
-            circles_radius = 3
+            circles_radius = 6
         # calculate map image size
         biggest = max(self.bbox["width"], self.bbox["height"])
         scl = max(self.width, self.height) / biggest
@@ -151,7 +167,7 @@ class MinimalMap:
                 map_draw.ellipse(circle_box, fill=fill)
 
         # draw shapes
-        elif self.element_type == "way":
+        elif self.element_type == "way" or self.element_type == "relation":
             # iterate throught shapes
             for way in self.json_data:
                 poly = []
@@ -163,8 +179,11 @@ class MinimalMap:
                     y = map(point["lat"], self.bbox["south"], self.bbox["north"],
                             0, map_im.height)
                     poly.append((x, y))
-                # finally draw poly
-                map_draw.polygon(poly, fill=fill)
+                if fill_type == "fill":
+                    # finally draw poly
+                    map_draw.polygon(poly, fill=fill)
+                elif fill_type == "line":
+                    map_draw.line(poly, fill=fill, width=10)
 
         # scale the image
         new_width = int(map_width * map_scl)
@@ -176,12 +195,12 @@ class MinimalMap:
 
         # create the text image
         text_im = Image.new('RGBA', (self.width, self.height),
-                            color=self.colors["secondary"])
+                            color=(0, 0, 0, 0))
         text_draw = ImageDraw.Draw(text_im)
 
         # city name format
         text = self.city
-        font_size = int(constrain((dy * 2 / 3), 40, 100))
+        font_size = 300
 
         # main text location
         tx = font_size / 2
@@ -196,7 +215,7 @@ class MinimalMap:
         # watermark
         # city name format
         text = "Lorenzo Rossi - www.lorenzoros.si"
-        font_size = int(constrain((dy * 1 / 3), 15, 35))
+        font_size = 100
         italic_font = ImageFont.truetype(font=self.italic_font_path,
                                          size=font_size)
         # create a new image with just the right size
@@ -221,13 +240,15 @@ class MinimalMap:
                                  color=self.colors["secondary"])
 
         # paste into final image
-        self.dest_im.paste(text_im)
         self.dest_im.paste(map_im, (dx, dy))
+        # paste with transparency
+        self.dest_im.paste(text_im, (0, 0), text_im)
 
     def saveImage(self, path):
         filename = f"{self.city}-{'-'.join(self.secondary_query)}.png"
         full_path = f"{path}/{filename}"
         self.dest_im.save(full_path)
+        return full_path.replace("\\", "/")
 
 
 def main():
@@ -251,8 +272,6 @@ def main():
     colors = settings["image"]["colors"]
     logging.info("Settings loaded")
 
-    # delete output folder
-    rmtree(output_folder)
     # create output folder
     Path(output_folder).mkdir(parents=True, exist_ok=True)
     # create city
@@ -268,12 +287,30 @@ def main():
         Path(output_path).mkdir(parents=True, exist_ok=True)
         m.setCity(city)
         for query in sorted(settings["queries"], key=lambda x: x["subtitle"]):
-            m.query(query["primary_query"], query["secondary_query"],
-                    query["type"])
-            m.createImage(fill=query["fill"], subtitle=query["subtitle"])
-            m.saveImage(output_path)
-            logging.info(f"Generated {' '.join(query['secondary_query'])}"
-                         f" for city {city}")
+            if type(query['secondary_query']) is list:
+                logging.info(f"Starting {' '.join(query['secondary_query'])} "
+                             f"for city {city}")
+            else:
+                logging.info(f"Starting {query['secondary_query']} "
+                             f"for city {city}")
+
+            result = m.query(query["primary_query"], query["secondary_query"],
+                             query["type"])
+
+            if result:
+                if "fill_type" in query:
+                    # we specified a fill type inside the settings
+                    m.createImage(fill=query["fill"], subtitle=query["subtitle"],
+                                  fill_type=query["fill_type"])
+                else:
+                    # there is not a fill type, just go default
+                    m.createImage(fill=query["fill"], subtitle=query["subtitle"])
+
+                full_path = m.saveImage(output_path)
+
+                logging.info(f"Completed. Filepath: {full_path}")
+            else:
+                logging.info("Not enough points. Aborted.")
 
         logging.info(f"{city} completed")
 
