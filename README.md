@@ -1,5 +1,5 @@
 # Minimalistic Maps
-`What if you could view all the cities in the world by just one of their features?`
+`What if you could view all the cities in the world by just one of their features?` or, with a less lame title, `Famous cities seen like you've never seen them before!`
 
 This is basically what this script does. It scrapes cities and renders on the map only some of their features (for example, their trees or their traffic lights). It's just easy as that.
 
