@@ -1,0 +1,2 @@
+Pillow == 7.1.1
+osmpythontools == 0.2.9
