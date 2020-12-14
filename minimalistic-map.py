@@ -1,6 +1,8 @@
 import json
 import time
+import logging
 
+from shutil import rmtree
 from pathlib import Path
 from PIL import Image, ImageFont, ImageDraw
 from OSMPythonTools.nominatim import Nominatim
@@ -14,6 +16,7 @@ def constrain(value, min, max):
     elif value > max:
         value = max
     return value
+
 
 # translate variables
 def map(value, old_min, old_max, new_min, new_max):
@@ -63,9 +66,14 @@ class MinimalMap:
                 try:
                     result = self.overpass.query(query, timeout=timeout)
                     break
+                except KeyboardInterrupt:
+                    logging.info("Received KeyboardInterrupt while querying. "
+                                 "Stopping execution.")
+                    quit()
                 except Exception as e:
-                    print(f"Error while querying {self.city}, {selector}. Error {e}")
-                    print("Trying again in a bit")
+                    logging.warning(f"Error while querying {self.city}, "
+                                    f" {selector}. Error {e}. \n"
+                                    "Trying again in a bit")
                     time.sleep(30)
 
             # convert to json and keep only the nodes
@@ -84,9 +92,9 @@ class MinimalMap:
             "width": lon[-1] - lon[0]
         }
 
-    def createImage(self, subtitle="", map_scl=.9):
+    def createImage(self, fill="red", subtitle="", map_scl=.9):
         if len(self.json_data) > 10000:
-            circles_radius = 1
+            circles_radius = 0.5
         elif len(self.json_data) > 1000:
             circles_radius = 2
         else:
@@ -114,7 +122,7 @@ class MinimalMap:
             circle_box = [x - circles_radius, y - circles_radius,
                           x + circles_radius, y + circles_radius]
             # finally draw circle
-            map_draw.ellipse(circle_box, fill=self.colors["fill"])
+            map_draw.ellipse(circle_box, fill=fill)
 
         # scale the image
         new_width = int(map_width * map_scl)
@@ -181,8 +189,12 @@ class MinimalMap:
 
 
 def main():
-    # color palette
-    # https://coolors.co/ffa400-009ffd-2a2a72-232528-eaf6ff
+    logfile = __file__.replace(".py", ".log")
+    logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s",
+                        level=logging.INFO, filename=logfile,
+                        filemode="w+")
+    print(f"Logging into {logfile}")
+    logging.info("Script started")
 
     with open("settings.json") as f:
         settings = json.load(f)
@@ -195,16 +207,19 @@ def main():
     main_font = settings["image"]["main_font"]
     italic_font = settings["image"]["italic_font"]
     colors = settings["image"]["colors"]
+    logging.info("Settings loaded")
 
+    # delete output folder
+    rmtree(output_folder)
     # create output folder
     Path(output_folder).mkdir(parents=True, exist_ok=True)
     # create city
     m = MinimalMap(colors, width=image_width, height=image_height)
     # load fonts
     m.loadFont(main_font, italic_font)
+    logging.info("Basic setup completed")
 
     # load queries
-
     for city in cities:
         output_path = f"{output_folder}/{city}/"
         # make output city folder
@@ -212,10 +227,16 @@ def main():
         m.setCity(city)
         for query in settings["queries"]:
             m.query(query["primary_query"], query["secondary_query"])
-            m.createImage(subtitle=query["subtitle"])
+            m.createImage(fill=query["fill"], subtitle=query["subtitle"])
             m.saveImage(output_path)
+            logging.info(f"Generated {' '.join(query['secondary_query'])}"
+                         f" for city {city}")
+
+        logging.info(f"{city} completed")
 
     print("Done")
+    logging.info("Everything done!")
+
 
 if __name__ == "__main__":
     main()
