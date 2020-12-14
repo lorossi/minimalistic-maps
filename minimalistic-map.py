@@ -1,10 +1,19 @@
 import json
-import osm2geojson
+import time
 
+from pathlib import Path
 from PIL import Image, ImageFont, ImageDraw
 from OSMPythonTools.nominatim import Nominatim
 from OSMPythonTools.overpass import overpassQueryBuilder, Overpass
 
+
+# constrains a value
+def constrain(value, min, max):
+    if value < min:
+        value = min
+    elif value > max:
+        value = max
+    return value
 
 # translate variables
 def map(value, old_min, old_max, new_min, new_max):
@@ -14,18 +23,13 @@ def map(value, old_min, old_max, new_min, new_max):
     return new_min + (value_scaled * new_width)
 
 
-class Citymap:
-    def __init__(self, colors, city="Milano", width=1500, height=1500):
-        self.city = city
+class MinimalMap:
+    def __init__(self, colors, width=1500, height=1500):
         self.width = width
         self.height = height
         self.colors = colors
-        # colors = {
-        #   background: "...",
-        #   text: "..."
-        # }
 
-        # identify the city
+        # start up apis
         self.nominatim = Nominatim()
         self.overpass = Overpass()
 
@@ -33,29 +37,21 @@ class Citymap:
         self.main_font_path = main_font_path
         self.italic_font_path = italic_font_path
 
-    def query(self, primary, secondary):
+    def setCity(self, city, timeout=300):
+        self.city = city
+        # select the city
+        query = self.nominatim.query(self.city, timeout=timeout)
+        self.area_id = query.areaId()
+
+    def query(self, primary, secondary, timeout=300):
         # initialize list
         self.json_data = []
         # convert secondary to list
         if type(secondary) is not list:
             secondary = [secondary]
 
-        # we save this variable to generate the output image
+        # we save this variable to generate the output image name
         self.secondary_query = secondary
-        # select the city
-        query = self.nominatim.query(self.city)
-
-        box_list = [float(x) for x in query.toJSON()[0]["boundingbox"]]
-        self.bbox = {
-            "north": box_list[1],
-            "south": box_list[0],
-            "east": box_list[2],
-            "west": box_list[3],
-            "height": box_list[1] - box_list[0],
-            "width": box_list[3] - box_list[2]
-        }
-
-        self.area_id = query.areaId()
 
         # load each selector
         for s in secondary:
@@ -63,26 +59,32 @@ class Citymap:
             selector = f'"{primary}"="{s}"'
             query = overpassQueryBuilder(area=self.area_id, elementType='node',
                                          selector=selector, out='body')
+            while True:
+                try:
+                    result = self.overpass.query(query, timeout=timeout)
+                    break
+                except Exception as e:
+                    print(f"Error while querying {self.city}, {selector}. Error {e}")
+                    print("Trying again in a bit")
+                    time.sleep(30)
 
-            result = self.overpass.query(query, timeout=60)
             # convert to json and keep only the nodes
             result_json = result.toJSON()["elements"]
             self.json_data.extend(result_json)  # keep only the elements
 
-        # load city boundary
-        selector = ['"boundary"="administrative"', '"admin_level"="8"']
-        query = overpassQueryBuilder(area=self.area_id, elementType='relation',
-                                     selector=selector, out='body',
-                                     includeGeometry=True)
+        lat = sorted([x["lat"] for x in self.json_data])
+        lon = sorted([x["lon"] for x in self.json_data])
 
-        result = self.overpass.query(query)
-        geojson = osm2geojson.json2shapes(result.toJSON())
+        self.bbox = {
+            "north": lat[0],
+            "south": lat[-1],
+            "east": lon[-1],
+            "west": lon[0],
+            "height": lat[-1] - lat[0],
+            "width": lon[-1] - lon[0]
+        }
 
-        self.polygon_coords = []
-        for point in geojson[0]["shape"]:
-            self.polygon_coords.extend(point.exterior.coords[:-1])
-
-    def createImage(self, subtitle="", map_scl=.95):
+    def createImage(self, subtitle="", map_scl=.75):
         if len(self.json_data) > 10000:
             circles_radius = 1
         elif len(self.json_data) > 1000:
@@ -101,19 +103,6 @@ class Citymap:
         map_im = Image.new('RGBA', (map_width, map_height),
                            color=self.colors["secondary"])
         map_draw = ImageDraw.Draw(map_im)
-
-        # now start drawing
-
-        # extract boundary lines
-        polygon_points = []
-        for point in self.polygon_coords:
-            x = map(point[0], self.bbox["east"],
-                    self.bbox["west"], 0, map_im.width)
-            y = map(point[1], self.bbox["south"], self.bbox["north"],
-                    0, map_im.height)
-            polygon_points.append((x, y))
-        # draw boundary
-        map_draw.polygon(polygon_points, outline=self.colors["boundary"])
 
         # draw points
         for node in self.json_data:
@@ -140,31 +129,41 @@ class Citymap:
                             color=self.colors["secondary"])
         text_draw = ImageDraw.Draw(text_im)
 
-        # main text format
+        # city name format
         text = self.city
-        font_size = int(dy * 2 / 3)
+        font_size = constrain((dy * 2 / 3), 40, 100)
         # main text location
-        tx = self.width / 2
-        ty = font_size / 2
-
+        tx = font_size / 2
+        ty = self.height - font_size / 2
         main_font = ImageFont.truetype(font=self.main_font_path,
                                        size=font_size)
-        text_draw.text((tx, ty), text=text, anchor="mt",
-                       fill=self.colors["primary"], font=main_font,
-                       align='center', stroke_fill=None)
 
-        # main text format
-        text = subtitle.replace("%n", str(len(self.json_data)))
-        font_size = int(dy * 1 / 3)
-        # italic text locatin
-        tx = self.width / 2
-        ty = self.height - font_size / 2
+        text_draw.text((tx, ty), text=text, anchor="ls",
+                       fill=self.colors["text"], font=main_font,
+                       align="left", stroke_fill=None)
 
+        # watermark
+        # city name format
+        text = "Lorenzo Rossi - www.lorenzoros.si"
+        font_size = constrain((dy * 1 / 3), 15, 35)
         italic_font = ImageFont.truetype(font=self.italic_font_path,
                                          size=font_size)
-        text_draw.text((tx, ty), text=text, anchor="mb",
-                       fill=self.colors["primary"], font=italic_font,
-                       align='center', stroke_fill=None)
+        # create a new image with just the right size
+        watermark_im = Image.new('RGBA', (self.width, font_size),
+                                 color=self.colors["secondary"])
+
+        watermark_draw = ImageDraw.Draw(watermark_im)
+        watermark_draw.text((watermark_im.width, watermark_im.height),
+                            text=text, font=italic_font, anchor="rd",
+                            fill=self.colors["watermark"], stroke_fill=None)
+        # rotate text
+        watermark_im = watermark_im.rotate(angle=90, expand=1)
+
+        # watermark location
+        tx = int(self.width - font_size * 1.5)
+        ty = int(font_size * 1.5)
+        # paste watermark into text
+        text_im.paste(watermark_im, (tx, ty))
 
         # final image
         self.dest_im = Image.new('RGBA', (self.width, self.height),
@@ -181,33 +180,41 @@ class Citymap:
 
 
 def main():
-    # https://coolors.co/011627-ff3366-2ec4b6-f6f7f8-20a4f3
-    # https://coolors.co/721817-fa9f42-2b4162-0b6e4f-e0e0e2
+    # color palette
+    # https://coolors.co/ffa400-009ffd-2a2a72-232528-eaf6ff
 
     with open("settings.json") as f:
         settings = json.load(f)
-    output_path = "output/"
 
     # settings unpacking
     image_width = settings["image"]["width"]
     image_height = settings["image"]["height"]
-    city = settings["image"]["city"]
+    output_folder = settings["image"]["output_path"]
+    cities = sorted(settings["cities"])
     main_font = settings["image"]["main_font"]
     italic_font = settings["image"]["italic_font"]
     colors = settings["image"]["colors"]
 
+    # create output folder
+    Path(output_folder).mkdir(parents=True, exist_ok=True)
     # create city
-    city = Citymap(colors, width=image_width, height=image_height, city=city)
+    m = MinimalMap(colors, width=image_width, height=image_height)
     # load fonts
-    city.loadFont(main_font, italic_font)
+    m.loadFont(main_font, italic_font)
 
     # load queries
 
-    for query in settings["queries"]:
-        city.query(query["primary_query"], query["secondary_query"])
-        city.createImage(subtitle=query["subtitle"])
-        city.saveImage(output_path)
+    for city in cities:
+        output_path = f"{output_folder}/{city}/"
+        # make output city folder
+        Path(output_path).mkdir(parents=True, exist_ok=True)
+        m.setCity(city)
+        for query in settings["queries"]:
+            m.query(query["primary_query"], query["secondary_query"])
+            m.createImage(subtitle=query["subtitle"])
+            m.saveImage(output_path)
 
+    print("Done")
 
 if __name__ == "__main__":
     main()
