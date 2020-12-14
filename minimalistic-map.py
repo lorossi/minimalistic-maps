@@ -84,7 +84,7 @@ class MinimalMap:
             "width": lon[-1] - lon[0]
         }
 
-    def createImage(self, subtitle="", map_scl=.75):
+    def createImage(self, subtitle="", map_scl=.9):
         if len(self.json_data) > 10000:
             circles_radius = 1
         elif len(self.json_data) > 1000:
@@ -131,7 +131,8 @@ class MinimalMap:
 
         # city name format
         text = self.city
-        font_size = constrain((dy * 2 / 3), 40, 100)
+        font_size = int(constrain((dy * 2 / 3), 40, 100))
+
         # main text location
         tx = font_size / 2
         ty = self.height - font_size / 2
@@ -145,7 +146,7 @@ class MinimalMap:
         # watermark
         # city name format
         text = "Lorenzo Rossi - www.lorenzoros.si"
-        font_size = constrain((dy * 1 / 3), 15, 35)
+        font_size = int(constrain((dy * 1 / 3), 15, 35))
         italic_font = ImageFont.truetype(font=self.italic_font_path,
                                          size=font_size)
         # create a new image with just the right size
