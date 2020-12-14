@@ -1,4 +1,5 @@
 import json
+import osm2geojson
 
 from PIL import Image, ImageFont, ImageDraw
 from OSMPythonTools.nominatim import Nominatim
@@ -43,7 +44,7 @@ class Citymap:
         self.secondary_query = secondary
         # select the city
         query = self.nominatim.query(self.city)
-        
+
         box_list = [float(x) for x in query.toJSON()[0]["boundingbox"]]
         self.bbox = {
             "north": box_list[1],
@@ -56,23 +57,38 @@ class Citymap:
 
         self.area_id = query.areaId()
 
+        # load each selector
         for s in secondary:
             # effective query
             selector = f'"{primary}"="{s}"'
             query = overpassQueryBuilder(area=self.area_id, elementType='node',
                                          selector=selector, out='body')
-            result = self.overpass.query(query)
+
+            result = self.overpass.query(query, timeout=60)
             # convert to json and keep only the nodes
             result_json = result.toJSON()["elements"]
             self.json_data.extend(result_json)  # keep only the elements
 
+        # load city boundary
+        selector = ['"boundary"="administrative"', '"admin_level"="8"']
+        query = overpassQueryBuilder(area=self.area_id, elementType='relation',
+                                     selector=selector, out='body',
+                                     includeGeometry=True)
+
+        result = self.overpass.query(query)
+        geojson = osm2geojson.json2shapes(result.toJSON())
+
+        self.polygon_coords = []
+        for point in geojson[0]["shape"]:
+            self.polygon_coords.extend(point.exterior.coords[:-1])
+
     def createImage(self, subtitle="", map_scl=.95):
         if len(self.json_data) > 10000:
-            circles_radius = 0.5
-        elif len(self.json_data) > 1000:
             circles_radius = 1
+        elif len(self.json_data) > 1000:
+            circles_radius = 2
         else:
-            circles_radius = 1.5
+            circles_radius = 3
         # calculate map image size
         biggest = max(self.bbox["width"], self.bbox["height"])
         scl = max(self.width, self.height) / biggest
@@ -82,11 +98,24 @@ class Citymap:
         map_height = int(self.bbox["height"] * scl)
 
         # create the map image
-        map_im = Image.new('RGB', (map_width, map_height),
+        map_im = Image.new('RGBA', (map_width, map_height),
                            color=self.colors["secondary"])
         map_draw = ImageDraw.Draw(map_im)
 
         # now start drawing
+
+        # extract boundary lines
+        polygon_points = []
+        for point in self.polygon_coords:
+            x = map(point[0], self.bbox["east"],
+                    self.bbox["west"], 0, map_im.width)
+            y = map(point[1], self.bbox["south"], self.bbox["north"],
+                    0, map_im.height)
+            polygon_points.append((x, y))
+        # draw boundary
+        map_draw.polygon(polygon_points, outline=self.colors["boundary"])
+
+        # draw points
         for node in self.json_data:
             # calculate each node position
             x = map(node["lon"], self.bbox["east"],
@@ -96,7 +125,7 @@ class Citymap:
             circle_box = [x - circles_radius, y - circles_radius,
                           x + circles_radius, y + circles_radius]
             # finally draw circle
-            map_draw.ellipse(circle_box, fill=self.colors["primary"])
+            map_draw.ellipse(circle_box, fill=self.colors["fill"])
 
         # scale the image
         new_width = int(map_width * map_scl)
@@ -107,7 +136,7 @@ class Citymap:
         dy = int((self.height - map_im.height) / 2)
 
         # create the text image
-        text_im = Image.new('RGB', (self.width, self.height),
+        text_im = Image.new('RGBA', (self.width, self.height),
                             color=self.colors["secondary"])
         text_draw = ImageDraw.Draw(text_im)
 
@@ -138,7 +167,7 @@ class Citymap:
                        align='center', stroke_fill=None)
 
         # final image
-        self.dest_im = Image.new('RGB', (self.width, self.height),
+        self.dest_im = Image.new('RGBA', (self.width, self.height),
                                  color=self.colors["secondary"])
 
         # paste into final image
@@ -178,6 +207,7 @@ def main():
         city.query(query["primary_query"], query["secondary_query"])
         city.createImage(subtitle=query["subtitle"])
         city.saveImage(output_path)
+
 
 if __name__ == "__main__":
     main()
