@@ -46,7 +46,9 @@ class MinimalMap:
         query = self.nominatim.query(self.city, timeout=timeout)
         self.area_id = query.areaId()
 
-    def query(self, primary, secondary, timeout=300):
+    def query(self, primary, secondary, element_type, timeout=300):
+        # save the element type
+        self.element_type = element_type
         # initialize list
         self.json_data = []
         # convert secondary to list
@@ -60,8 +62,10 @@ class MinimalMap:
         for s in secondary:
             # effective query
             selector = f'"{primary}"="{s}"'
-            query = overpassQueryBuilder(area=self.area_id, elementType='node',
-                                         selector=selector, out='body')
+            query = overpassQueryBuilder(area=self.area_id,
+                                         elementType=self.element_type,
+                                         selector=selector, out='body',
+                                         includeGeometry=True)
             while True:
                 try:
                     result = self.overpass.query(query, timeout=timeout)
@@ -76,12 +80,32 @@ class MinimalMap:
                                     "Trying again in a bit")
                     time.sleep(30)
 
-            # convert to json and keep only the nodes
-            result_json = result.toJSON()["elements"]
-            self.json_data.extend(result_json)  # keep only the elements
+            if self.element_type == "node":
+                # convert to json and keep only the nodes
+                result_json = result.toJSON()["elements"]
+                self.json_data.extend(result_json)  # keep only the elements
 
-        lat = sorted([x["lat"] for x in self.json_data])
-        lon = sorted([x["lon"] for x in self.json_data])
+            elif self.element_type == "way":
+                # this is going to be fun, it's a polygon!
+                result_json = result.toJSON()["elements"]
+                for r in result_json:
+                    self.json_data.append(r["geometry"])
+
+        if self.element_type == "node":
+            lat = sorted([x["lat"] for x in self.json_data])
+            lon = sorted([x["lon"] for x in self.json_data])
+
+        elif self.element_type == "way":
+            lat = []
+            lon = []
+            # i'm sure there's a list comprehension for this
+            for way in self.json_data:
+                for point in way:
+                    lat.append(point["lat"])
+                    lon.append(point["lon"])
+
+            lat = sorted(lat)
+            lon = sorted(lon)
 
         self.bbox = {
             "north": lat[0],
@@ -91,6 +115,7 @@ class MinimalMap:
             "height": lat[-1] - lat[0],
             "width": lon[-1] - lon[0]
         }
+
 
     def createImage(self, fill="red", subtitle="", map_scl=.9):
         if len(self.json_data) > 10000:
@@ -113,16 +138,33 @@ class MinimalMap:
         map_draw = ImageDraw.Draw(map_im)
 
         # draw points
-        for node in self.json_data:
-            # calculate each node position
-            x = map(node["lon"], self.bbox["east"],
-                    self.bbox["west"], 0, map_im.width)
-            y = map(node["lat"], self.bbox["south"], self.bbox["north"],
-                    0, map_im.height)
-            circle_box = [x - circles_radius, y - circles_radius,
-                          x + circles_radius, y + circles_radius]
-            # finally draw circle
-            map_draw.ellipse(circle_box, fill=fill)
+        if self.element_type == "node":
+            for node in self.json_data:
+                # calculate each node position
+                x = map(node["lon"], self.bbox["east"],
+                        self.bbox["west"], 0, map_im.width)
+                y = map(node["lat"], self.bbox["south"], self.bbox["north"],
+                        0, map_im.height)
+                circle_box = [x - circles_radius, y - circles_radius,
+                              x + circles_radius, y + circles_radius]
+                # finally draw circle
+                map_draw.ellipse(circle_box, fill=fill)
+
+        # draw shapes
+        elif self.element_type == "way":
+            # iterate throught shapes
+            for way in self.json_data:
+                poly = []
+                # iterate throught points
+                for point in way:
+                    # calculate each point position
+                    x = map(point["lon"], self.bbox["east"],
+                            self.bbox["west"], 0, map_im.width)
+                    y = map(point["lat"], self.bbox["south"], self.bbox["north"],
+                            0, map_im.height)
+                    poly.append((x, y))
+                # finally draw poly
+                map_draw.polygon(poly, fill=fill)
 
         # scale the image
         new_width = int(map_width * map_scl)
@@ -225,8 +267,9 @@ def main():
         # make output city folder
         Path(output_path).mkdir(parents=True, exist_ok=True)
         m.setCity(city)
-        for query in settings["queries"]:
-            m.query(query["primary_query"], query["secondary_query"])
+        for query in sorted(settings["queries"], key=lambda x: x["subtitle"]):
+            m.query(query["primary_query"], query["secondary_query"],
+                    query["type"])
             m.createImage(fill=query["fill"], subtitle=query["subtitle"])
             m.saveImage(output_path)
             logging.info(f"Generated {' '.join(query['secondary_query'])}"

@@ -20,19 +20,36 @@
       "primary_query": "natural",
       "secondary_query": ["tree", "wood", "tree_row"],
       "subtitle": "trees",
+      "type": "node",
       "fill": "#90be6d"
     },
     {
       "primary_query": "amenity",
       "secondary_query": ["bar", "cafe", "fast_food", "ice_cream", "pub", "restaurant"],
       "subtitle": "places to eat",
+      "type": "node",
       "fill": "#f8961e"
     },
     {
       "primary_query": "highway",
       "secondary_query": "traffic_signals",
       "subtitle": "traffic lights",
+      "type": "node",
       "fill": "#f94144"
+    },
+    {
+      "primary_query": "leisure",
+      "secondary_query": ["park", "garden"],
+      "subtitle": "parks",
+      "type": "way",
+      "fill": "#90be6d"
+    },
+    {
+      "primary_query": "natural",
+      "secondary_query": "water",
+      "subtitle": "rivers",
+      "type": "way",
+      "fill": "#90be6d"
     }
   ]
 }
