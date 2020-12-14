@@ -6,8 +6,10 @@
     "main_font": "resources/Roboto-Light.ttf",
     "italic_font": "resources/Roboto-LightItalic.ttf",
     "colors": {
-          "primary": "#EBEBEB64",
-          "secondary": "#1F1F1F"
+          "primary": "#EBEBEB",
+          "secondary": "#1F1F1F",
+          "boundary": "#EBEBEB37",
+          "fill": "#721817"
       }
   },
   "queries" : [
@@ -30,6 +32,31 @@
       "primary_query": "amenity",
       "secondary_query": "bench",
       "subtitle": "e le sue %n panchine"
+    },
+    {
+      "primary_query": "amenity",
+      "secondary_query": ["school", "college", "kindergarten", "university"],
+      "subtitle": "e le sue %n scuole"
+    },
+    {
+      "primary_query": "amenity",
+      "secondary_query": "library",
+      "subtitle": "e le sue %n biblioteche"
+    },
+    {
+      "primary_query": "amenity",
+      "secondary_query": "fuel",
+      "subtitle": "e le sue %n stazioni di rifornimento"
+    },
+    {
+      "primary_query": "amenity",
+      "secondary_query": "atm",
+      "subtitle": "e i suoi %n bancomat"
+    },
+    {
+      "primary_query": "amenity",
+      "secondary_query": "cinema",
+      "subtitle": "e i suoi %n cinema"
     }
   ]
 }
