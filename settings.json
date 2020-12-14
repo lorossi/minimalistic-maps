@@ -1,0 +1,35 @@
+{
+  "image": {
+    "width": 1500,
+    "height": 1200,
+    "city": "Milano",
+    "main_font": "resources/Roboto-Light.ttf",
+    "italic_font": "resources/Roboto-LightItalic.ttf",
+    "colors": {
+          "primary": "#EBEBEB64",
+          "secondary": "#1F1F1F"
+      }
+  },
+  "queries" : [
+    {
+      "primary_query": "natural",
+      "secondary_query": "tree",
+      "subtitle": "e i suoi %n alberi"
+    },
+    {
+      "primary_query": "amenity",
+      "secondary_query": ["bar", "cafe", "fast_food", "ice_cream", "pub", "restaurant"],
+      "subtitle": "e i suoi %n posti in cui mangiare"
+    },
+    {
+      "primary_query": "amenity",
+      "secondary_query": "drinking_water",
+      "subtitle": "e le sue %n fontanelle dell'acqua"
+    },
+    {
+      "primary_query": "amenity",
+      "secondary_query": "bench",
+      "subtitle": "e le sue %n panchine"
+    }
+  ]
+}
