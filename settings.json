@@ -6,14 +6,14 @@
     "main_font": "resources/Roboto-Light.ttf",
     "italic_font": "resources/Roboto-LightItalic.ttf",
     "colors": {
-          "primary": "#EAF6FF",
-          "secondary": "#232528",
-          "text": "#EAF6FF64",
-          "watermark": "#EAF6FF32"
+          "primary": "#FAFAFA",
+          "secondary": "#212121",
+          "text": "#FAFAFA64",
+          "watermark": "#FAFAFA32"
       }
   },
   "cities": [
-    "Paris", "Berlin", "Oslo", "London", "Rome", "Moscow", "Madrid", "Vienna", "Budapest", "Prague", "Brussels", "Amsterdam"
+    "Sydney", "Paris", "Berlin", "Oslo", "London", "Rome", "Moscow", "Madrid", "Vienna", "Budapest", "Prague", "Brussels", "Amsterdam", "San Paolo", "New York", "Montreal", "Mexico City", "Jakarta", "Singapore", "New Delhi", "Saint Petersburg", "Hong Kong", "Beirut", "Seoul", "Johannesburg", "Athens"
   ],
   "queries": [
     {
@@ -21,43 +21,43 @@
       "secondary_query": ["tree", "wood", "tree_row"],
       "subtitle": "trees",
       "type": "node",
-      "fill": "#90be6d"
+      "fill": "#43A047"
     },
     {
       "primary_query": "amenity",
       "secondary_query": ["bar", "cafe", "fast_food", "ice_cream", "pub", "restaurant"],
       "subtitle": "places to eat",
       "type": "node",
-      "fill": "#f8961e"
+      "fill": "#FB8C00"
     },
     {
       "primary_query": "highway",
       "secondary_query": "traffic_signals",
       "subtitle": "traffic lights",
       "type": "node",
-      "fill": "#f94144"
+      "fill": "#F4511E"
     },
     {
       "primary_query": "leisure",
       "secondary_query": ["park", "garden"],
       "subtitle": "parks",
       "type": "way",
-      "fill": "#90be6d"
+      "fill": "#2E7D32"
     },
     {
       "primary_query": "waterway",
       "secondary_query": ["river", "river_bank", "canal"],
       "subtitle": "rivers",
       "type": "way",
-      "fill": "#457b9d",
+      "fill": "#0277BD",
       "fill_type": "line"
     },
     {
       "primary_query": "railway",
-      "secondary_query": ["rail", "tram"],
+      "secondary_query": "rail",
       "subtitle": "rails",
       "type": "way",
-      "fill": "#adb5bd",
+      "fill": "#9E9E9E",
       "fill_type": "line"
     },
     {
@@ -65,7 +65,7 @@
       "secondary_query": "subway",
       "subtitle": "subway",
       "type": "way",
-      "fill": "#0466c8",
+      "fill": "#e53935",
       "fill_type": "line"
     },
     {
@@ -73,8 +73,29 @@
       "secondary_query": "bicycle",
       "subtitle": "bike lanes",
       "type": "relation",
-      "fill": "#2d6a4f",
+      "fill": "#43A047",
       "fill_type": "line"
+    },
+    {
+      "primary_query": "amenity",
+      "secondary_query": "charging_station",
+      "subtitle": "charging stations",
+      "type": "node",
+      "fill": "#FFEE58"
+    },
+    {
+      "primary_query": "route",
+      "secondary_query": ["bus", "light_rail", "tram", "trolleybus"],
+      "subtitle": "public transport",
+      "type": "relation",
+      "fill": "#D81B60"
+    },
+    {
+      "primary_query": "public_transport",
+      "secondary_query": ["stop_position", "platform", "station"],
+      "subtitle": "public transport stops",
+      "type": "node",
+      "fill": "#D81B60"
     }
   ]
 }
