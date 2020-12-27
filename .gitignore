@@ -3,3 +3,4 @@ cache/
 output/
 *.log
 *test*
+*settings~*
