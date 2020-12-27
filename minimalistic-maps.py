@@ -5,19 +5,11 @@ import json
 import time
 import logging
 
+from math import sqrt
 from pathlib import Path
 from PIL import Image, ImageFont, ImageDraw
 from OSMPythonTools.nominatim import Nominatim
 from OSMPythonTools.overpass import overpassQueryBuilder, Overpass
-
-
-# constrains a value
-def constrain(value, min=None, max=None):
-    if min and value < min:
-        value = min
-    elif max and value > max:
-        value = max
-    return value
 
 
 # translate variables
@@ -34,9 +26,15 @@ class MinimalMap:
         self.height = height
         self.colors = colors
 
+        self.dist_factor = 1.75
+
         # start up apis
         self.nominatim = Nominatim()
         self.overpass = Overpass()
+
+    def distance(self, point):
+        return sqrt((point["lon"] - self.center["x"]) ** 2 +
+                    (point["lat"] - self.center["y"]) ** 2)
 
     def loadFont(self, main_font_path, italic_font_path):
         self.main_font_path = main_font_path
@@ -122,13 +120,24 @@ class MinimalMap:
         if not lat or not len:
             return False
 
+        # define the bounding box
         self.bbox = {
             "north": lat[0],
             "south": lat[-1],
-            "east": lon[-1],
-            "west": lon[0],
+            "east": lon[0],
+            "west": lon[-1],
             "height": lat[-1] - lat[0],
             "width": lon[-1] - lon[0]
+        }
+
+        # check if any point was found
+        if self.bbox["width"] == 0 or self.bbox["height"] == 0:
+            return False
+
+        # calculate center point
+        self.center = {
+            "x": (lon[0] + lon[-1]) / 2,
+            "y": (lat[0] + lat[-1]) / 2
         }
 
         return True
@@ -248,7 +257,7 @@ class MinimalMap:
         filename = f"{self.city}-{'-'.join(self.secondary_query)}.png"
         full_path = f"{path}/{filename}"
         self.dest_im.save(full_path)
-        return full_path.replace("\\", "/")
+        return full_path.replace("//", "/")
 
 
 def main():
