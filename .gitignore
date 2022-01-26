@@ -1,6 +1,4 @@
-tests/
 cache/
-output/
-*.log
-*test*
-*settings~*
+venv/
+.vscode
+__pycache__
