@@ -10,19 +10,37 @@ class ImageCreator:
         self._draw = ImageDraw.Draw(self._image)
 
     def _calculateBorder(
-        self, relative_points=list[tuple[float, float]]
+        self, relative_points: list[tuple[float, float]]
     ) -> tuple[float, float]:
+        """Calculates x, y displacement according to a set of points normalized coords
+
+        Args:
+            relative_points (list[tuple[float, float]]): List of relative coordinates
+
+        Returns:
+            tuple[float, float]: x and y border on output image
+        """
+
         dx = max(p[0] for p in relative_points) - min(p[0] for p in relative_points)
         dy = max(p[1] for p in relative_points) - min(p[1] for p in relative_points)
 
         return (1 - dx) / 2, (1 - dy) / 2
 
     def drawCircle(
-        self, point: tuple[int, int], r: float, fill: tuple[int, int, int, int]
+        self,
+        coords: tuple[int, int],
+        r: float = 1,
+        fill: tuple[int, int, int, int] | str = "black",
     ) -> None:
-        # draws a point according to its absolute position (in range [0-1] for both x and y)
+        """Draws a circle according to its relative position (in range [0-1] for both x and y)
+
+        Args:
+            coords (tuple[int, int]): circle center coordinates
+            r (float, optional): Circle radius. Defaults to 1.
+            fill (tuple[int, int, int, int] | str, optional): Fill color. Defaults to "black".
+        """
         # arc bounding box
-        xy = (point[0] - r, point[1] - r, point[0] + r, point[1] + r)
+        xy = (coords[0] - r, coords[1] - r, coords[0] + r, coords[1] + r)
 
         self._draw.ellipse(xy, fill=fill)
 
@@ -44,10 +62,15 @@ class ImageCreator:
             self.drawCircle(real_pos, radius, fill)
 
     def save(self, filename: str) -> None:
+        """Saves image as a png file
+
+        Args:
+            filename (str): Filename. Extension gets automatically added.
+        """
         if filename[:-4] != ".png":
             filename += ".png"
 
         self._image.save(filename, "PNG")
 
-    def drawTrees(self, pos: list[tuple[float, float]]) -> None:
+    def drawNodes(self, pos: list[tuple[float, float]]) -> None:
         self._drawCircle(pos, "darkgreen", 1)

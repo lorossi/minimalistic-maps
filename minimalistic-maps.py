@@ -6,15 +6,15 @@ from image import ImageCreator
 
 
 def main():
-    cities = ["Milano", "Rome", "Florence"]
+    cities = ["Milano"]
 
     for city in cities:
         c = CityMap(city)
-        c.loadTrees()
 
         i = ImageCreator()
-        i.drawTrees(c.trees)
-        i.save(city.lower())
+        i.drawNodes(c.trees)
+        outfile = f"output/{city}.png"
+        i.save(outfile)
 
 
 if __name__ == "__main__":
