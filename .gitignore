@@ -2,3 +2,4 @@ cache/
 venv/
 .vscode
 __pycache__
+output/
