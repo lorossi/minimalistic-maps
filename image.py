@@ -67,7 +67,7 @@ class ImageCreator:
         Args:
             filename (str): Filename. Extension gets automatically added.
         """
-        if filename[:-4] != ".png":
+        if filename[-4:] != ".png":
             filename += ".png"
 
         self._image.save(filename, "PNG")

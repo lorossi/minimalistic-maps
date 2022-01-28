@@ -20,6 +20,18 @@ class CityMap:
             timeout=self._timeout,
         ).areaId()
 
+    def _queryOSM(self, element_tag: str, elementType: str) -> None:
+        query = overpassQueryBuilder(
+            area=self._area_id,
+            selector=element_tag,
+            elementType="node",
+        )
+
+        self._elements_dict[element_tag] = self._overpass.query(
+            query,
+            timeout=self._timeout,
+        ).elements()
+
     def _coordsToXY(self, lat: float, lon: float) -> tuple[float, float]:
         """Converts lat, loon coordinates to x, y coordinates
 
@@ -75,23 +87,6 @@ class CityMap:
             (abs(p[0] - bbox[0]) / scl, abs(p[1] - bbox[1]) / scl) for p in pos
         ]
 
-    def _loadNodes(self, element_tag: str) -> None:
-        """Loads into self._elements_dict a set of nodes.
-
-        Args:
-            element_tag (str): Nodes tag, as found in self._elements_dict
-        """
-        query = overpassQueryBuilder(
-            area=self._area_id,
-            selector=element_tag,
-            elementType="node",
-        )
-
-        self._elements_dict[element_tag] = self._overpass.query(
-            query,
-            timeout=self._timeout,
-        ).nodes()
-
     @property
     def trees(self) -> list[tuple[float, float]]:
         """List of normalized coords for trees
@@ -100,6 +95,6 @@ class CityMap:
             list[tuple[float, float]]: list of normalized coords
         """
         trees_tag = self._tags_dict["trees"]
-        self._loadNodes(trees_tag)
+        self._queryOSM(trees_tag, "nodes")
         self._normalizeElements(trees_tag)
         return [x for x in self._normalized_dict[trees_tag]]
