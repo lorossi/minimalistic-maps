@@ -2,31 +2,15 @@ from PIL import Image, ImageDraw
 
 
 class ImageCreator:
-    def __init__(self, width: int = 2000, height: int = 2000):
-        self._width = width
-        self._height = height
+    def __init__(self, width: int = 2000, height: int = 2000, scl: float = 1):
+        self._sizes = (width, height)
+        self._scl = scl
+        self._border = tuple(s * (1 - self._scl) / 2 for s in self._sizes)
 
-        self._image = Image.new("RGB", (self._width, self._height), "lightgrey")
+        self._image = Image.new("RGB", self._sizes, "lightgrey")
         self._draw = ImageDraw.Draw(self._image)
 
-    def _calculateBorder(
-        self, relative_points: list[tuple[float, float]]
-    ) -> tuple[float, float]:
-        """Calculates x, y displacement according to a set of points normalized coords
-
-        Args:
-            relative_points (list[tuple[float, float]]): List of relative coordinates
-
-        Returns:
-            tuple[float, float]: x and y border on output image
-        """
-
-        dx = max(p[0] for p in relative_points) - min(p[0] for p in relative_points)
-        dy = max(p[1] for p in relative_points) - min(p[1] for p in relative_points)
-
-        return (1 - dx) / 2, (1 - dy) / 2
-
-    def drawCircle(
+    def _drawCircle(
         self,
         coords: tuple[int, int],
         r: float = 1,
@@ -44,22 +28,32 @@ class ImageCreator:
 
         self._draw.ellipse(xy, fill=fill)
 
-    def _drawCircle(
+    def _drawPoly(
         self,
-        pos: list[tuple[float, float]],
-        fill: tuple[float, float, float, float] | str = None,
-        radius: float = 1,
+        coords: list[tuple[int, int]],
+        width: float = 1,
+        fill: tuple[int, int, int, int] | str = "black",
     ) -> None:
+        """Draws a polygon according to its relative position (in range [0-1] for both x and y)
 
-        if not fill:
-            fill = (0, 0, 0, 255)
+        Args:
+            coords (list[tuple[int, int]]): list of relative coordinates
+            width (float): line width. Defaults to 1;
+            fill (tuple[int, int, int, int] | str, optional): Fill color. Defaults to "black".
+        """
+        # arc bounding box
+        self._draw.polygon(coords, width=width, fill=fill)
 
-        dx, dy = self._calculateBorder(pos)
-        size = min(self._width, self._height)
+    def _relativeToAbsolute(self, rel: tuple[float, float]) -> tuple[float, float]:
+        if isinstance(rel, tuple):
+            return tuple(
+                self._border[x] + rel[x] * self._sizes[x] * self._scl for x in [0, 1]
+            )
 
-        for p in pos:
-            real_pos = (size * (p[0] + dx), size * (p[1] + dy))
-            self.drawCircle(real_pos, radius, fill)
+        return list(
+            tuple(self._border[x] + r[x] * self._sizes[x] * self._scl for x in [0, 1])
+            for r in rel
+        )
 
     def save(self, filename: str) -> None:
         """Saves image as a png file
@@ -72,5 +66,13 @@ class ImageCreator:
 
         self._image.save(filename, "PNG")
 
-    def drawNodes(self, pos: list[tuple[float, float]]) -> None:
-        self._drawCircle(pos, "darkgreen", 1)
+    def drawTrees(self, pos: list[tuple[float, float]]) -> None:
+        for p in pos:
+            abs_pos = self._relativeToAbsolute(p)
+            # print(p, abs_pos)
+            self._drawCircle(abs_pos, 1, "darkgreen")
+
+    def drawWater(self, pos: list[tuple[float, float]]) -> None:
+        for p in pos:
+            abs_pos = self._relativeToAbsolute(p)
+            self._drawPoly(abs_pos, 1, "blue")
