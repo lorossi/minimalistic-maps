@@ -1,14 +1,20 @@
+from copy import deepcopy
+from math import cos, sin, asin, radians, sqrt
 from OSMPythonTools.nominatim import Nominatim
 from OSMPythonTools.overpass import overpassQueryBuilder, Overpass
-from math import cos, sin, radians
-
-import itertools
-import copy
 
 
 class CityMap:
-    def __init__(self, city: str) -> None:
+    def __init__(self, city: str, radius: float = 3000) -> None:
+        """Create city map
+
+        Args:
+            city (str): City name
+            radius (float, optional): City radius, in meters. Defaults to 3000.
+        """
         self._city = city
+        self._radius = radius
+
         self._elements_dict = {}
         self._normalized_dict = {}
         self._features_list = [
@@ -21,6 +27,16 @@ class CityMap:
                 "name": "water",
                 "tag": ["natural=water"],
                 "topology": ["way"],
+            },
+            {
+                "name": "parks",
+                "tag": [
+                    "leisure=park",
+                    "leisure=garden",
+                    "landuse=green",
+                    "landuse=grass",
+                ],
+                "topology": ["area"],
             },
         ]
 
@@ -38,16 +54,68 @@ class CityMap:
         )
         # city area id
         self._area_id = city_query.areaId()
-        # city coords bounding box (lat-lat, lon-lon)
-        self._bbox = tuple(float(x) for x in city_query.toJSON()[0]["boundingbox"])
-        # city bounding coordinates in xy format
-        self._xy_bbox = tuple(
-            itertools.chain.from_iterable(
-                self._coordsToXY(self._bbox[x], self._bbox[x + 2]) for x in [0, 1]
-            )
+        # city center cords
+        self._city_center = tuple(
+            float(city_query.toJSON()[0][x]) for x in ["lat", "lon"]
         )
-        # map scale
-        self._scl = max(abs(self._xy_bbox[x] - self._xy_bbox[x + 2]) for x in [0, 1])
+        # city center coords in radians
+        self._city_center_rad = tuple(radians(x) for x in self._city_center)
+
+        self._calculateBBOX()
+
+    def _calculateBBOX(self) -> None:
+        """Calculates city area bounding box according to its center"""
+        r_lat = radians(self._city_center[0])
+        km_lat, km_lon = 110.574235, 110.572833 * cos(r_lat)
+        d_lat = self._radius / 1000 / km_lat
+        d_lon = self._radius / 1000 / km_lon
+
+        self._bbox = (
+            self._city_center[0] - d_lat,
+            self._city_center[1] - d_lon,
+            self._city_center[0] + d_lat,
+            self._city_center[1] + d_lon,
+        )
+
+    def _coordsToXY(self, lat: float, lon: float) -> tuple[float, float]:
+        """Calculates points x and y coordinates according to its latitude and longitude
+
+        Args:
+            lat (float)
+            lon (float)
+
+        Returns:
+            tuple[float, float]: x, y coordinates
+        """
+        x = (lat - self._bbox[0]) / (self._bbox[2] - self._bbox[0])
+        y = (lon - self._bbox[1]) / (self._bbox[3] - self._bbox[1])
+
+        return x, y
+
+    def _distFromCityCenter(self, lat: float, lon: float) -> float:
+        """Returns distance between a point and the city center coordinates
+
+        Args:
+            lat (float)
+            lon (float)
+
+        Returns:
+            float: distance in meters
+        """
+        R = 6371
+        r_lat, r_lon = radians(lat), radians(lon)
+        d_lat, d_lon = (
+            r_lat - self._city_center_rad[0],
+            r_lon - self._city_center_rad[1],
+        )
+
+        a = (
+            sin(d_lat / 2) ** 2
+            + cos(r_lat) * cos(self._city_center_rad[0]) * sin(d_lon / 2) ** 2
+        )
+        c = 2 * asin(sqrt(a))
+
+        return R * c * 1000  # meters
 
     def _queryOSM(self, **kwargs) -> None:
         """Query OSM and load data into self._elements_dict
@@ -77,7 +145,7 @@ class CityMap:
 
             if "node" in kwargs["topology"]:
                 self._elements_dict[kwargs["name"]].extend(results.nodes())
-            elif "way" in kwargs["topology"]:
+            elif any(t in ["way", "area"] for t in kwargs["topology"]):
                 self._elements_dict[kwargs["name"]].extend(results.ways())
 
     def _normalizeElements(self, **kwargs) -> None:
@@ -90,59 +158,39 @@ class CityMap:
             tag (str): Element tag.
             topology (str): Element topology.
         """
-
         if "node" in kwargs["topology"]:
-            # extract coordinates
-            pos = [
+            coords = [
                 self._coordsToXY(e.lat(), e.lon())
                 for e in self._elements_dict[kwargs["name"]]
+                if self._distFromCityCenter(e.lat(), e.lon()) < self._radius
             ]
+
+            if not coords:
+                return
 
             # normalize and return coordinates
-            self._normalized_dict[kwargs["name"]] = [
-                tuple(abs(p[x] - self._xy_bbox[x]) / self._scl for x in [0, 1])
-                for p in pos
-            ]
+            self._normalized_dict[kwargs["name"]] = coords
 
-            # print(self._normalized_dict[kwargs["name"]])
-
-        elif "way" in kwargs["topology"]:
+        elif any(t in ["way", "area"] for t in kwargs["topology"]):
             self._normalized_dict[kwargs["name"]] = []
 
             for element in self._elements_dict[kwargs["name"]]:
                 for shape in element.geometry()["coordinates"]:
+                    # sometimes shape are just an element
                     if len(shape) == 1:
                         shape = shape[0]
+                    # filter coords and convert to xy
+                    coords = [
+                        self._coordsToXY(*s[::-1])
+                        for s in shape
+                        if self._distFromCityCenter(*s[::-1]) < self._radius
+                    ]
 
-                    # LONGITUDE AND LATITUDE ARE REVERSED! WTF
-                    pos = [self._coordsToXY(*s[::-1]) for s in shape]
+                    # sometimes the coords list might be empty
+                    if not coords:
+                        continue
 
-                    self._normalized_dict[kwargs["name"]].append(
-                        [
-                            tuple(
-                                abs(p[x] - self._xy_bbox[x]) / self._scl for x in [0, 1]
-                            )
-                            for p in pos
-                        ]
-                    )
-
-    def _coordsToXY(self, lat: float, lon: float) -> tuple[float, float]:
-        """Converts lat, loon coordinates to x, y coordinates
-
-        Args:
-            lat (float): latitude
-            lon (float): longitude
-
-        Returns:
-            tuple[float, float]
-        """
-
-        R = 6371
-        r_lat, r_lon = radians(lat), radians(lon)
-        x = R * cos(r_lat) * cos(r_lon)
-        y = R * cos(r_lat) * sin(r_lon)
-
-        return x, y
+                    self._normalized_dict[kwargs["name"]].append(coords)
 
     def loadFeatures(self) -> None:
         for feature in self._features_list:
@@ -156,7 +204,7 @@ class CityMap:
         Returns:
             list[tuple[float, float]]: list of normalized coords
         """
-        return copy.deepcopy(self._normalized_dict["trees"])
+        return deepcopy(self._normalized_dict["trees"])
 
     @property
     def water(self) -> list[list[tuple[float, float]]]:
@@ -165,4 +213,13 @@ class CityMap:
         Returns:
             list[tuple[float, float]]: list of normalized coords
         """
-        return copy.deepcopy(self._normalized_dict["water"])
+        return deepcopy(self._normalized_dict["water"])
+
+    @property
+    def parks(self) -> list[list[tuple[float, float]]]:
+        """List of normalized coords for parks
+
+        Returns:
+            list[tuple[float, float]]: list of normalized coords
+        """
+        return deepcopy(self._normalized_dict["parks"])

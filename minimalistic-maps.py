@@ -21,6 +21,7 @@ def main():
         i = ImageCreator()
         i.drawTrees(c.trees)
         i.drawWater(c.water)
+        i.drawParks(c.parks)
 
         outfile = f"output/{city}.png"
         i.save(outfile)
