@@ -51,6 +51,12 @@ class CityMap:
                 "topology": ["way"],
             },
             {"name": "bench", "tag": ["amenity=bench"], "topology": ["node"]},
+            {"name": "traffic", "tag": ["traffic_signals"], "topology": ["node"]},
+            {
+                "name": "water fountain",
+                "tag": ["amenity=drinking_water"],
+                "topology": ["node"],
+            },
         ]
 
         # request timing
@@ -66,7 +72,7 @@ class CityMap:
         """Returns a list of features. Too check the available features, try using the features attribute
 
         Returns:
-            [type]: [description]
+            list[tuple[float, float]]: list of relative positions
         """
         if feature in self._normalized_dict:
             return self._normalized_dict[feature]
