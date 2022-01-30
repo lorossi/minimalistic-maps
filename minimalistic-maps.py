@@ -22,6 +22,7 @@ def main():
         i.drawTrees(c.trees)
         i.drawWater(c.water)
         i.drawParks(c.parks)
+        i.drawBuildings(c.buildings)
 
         outfile = f"output/{city}.png"
         i.save(outfile)

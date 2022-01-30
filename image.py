@@ -88,3 +88,12 @@ class ImageCreator:
                 continue
 
             self._drawPoly(abs_pos, 1, "lightgreen")
+
+    def drawBuildings(self, pos: list[tuple[float, float]]) -> None:
+        for p in pos:
+            abs_pos = self._relativeToAbsolute(p)
+
+            if len(abs_pos) < 3:
+                continue
+
+            self._drawPoly(abs_pos, 1, "brown")

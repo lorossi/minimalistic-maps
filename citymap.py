@@ -1,5 +1,7 @@
+from time import sleep
 from copy import deepcopy
 from math import cos, sin, asin, radians, sqrt
+from multiprocessing.sharedctypes import Value
 from OSMPythonTools.nominatim import Nominatim
 from OSMPythonTools.overpass import overpassQueryBuilder, Overpass
 
@@ -37,6 +39,11 @@ class CityMap:
                     "landuse=grass",
                 ],
                 "topology": ["area"],
+            },
+            {
+                "name": "buildings",
+                "tag": ["building"],
+                "topology": ["way"],
             },
         ]
 
@@ -125,20 +132,32 @@ class CityMap:
             tag (str): Element tag.
             topology (str): Element topology.
         """
+
+        if not self._bbox:
+            raise ValueError("Bounding Box not loaded.")
+
         self._elements_dict[kwargs["name"]] = []
 
         for t in kwargs["tag"]:
             query = overpassQueryBuilder(
-                area=self._area_id,
+                bbox=self._bbox,
                 selector=t,
                 elementType=kwargs["topology"],
                 includeGeometry=True,
             )
 
-            results = self._overpass.query(
-                query,
-                timeout=self._timeout,
-            )
+            while True:
+                try:
+                    results = self._overpass.query(
+                        query,
+                        timeout=self._timeout,
+                    )
+                    break
+                except Exception as e:
+                    # OFC they couldn't raise proper exceptions.
+                    # this exceptions is a "generic" exception.
+                    print("Error", e, "Trying again in 10 seconds")
+                    sleep(10)
 
             if not results.elements():
                 continue
@@ -223,3 +242,12 @@ class CityMap:
             list[tuple[float, float]]: list of normalized coords
         """
         return deepcopy(self._normalized_dict["parks"])
+
+    @property
+    def buildings(self) -> list[list[tuple[float, float]]]:
+        """List of normalized coords for buildings
+
+        Returns:
+            list[tuple[float, float]]: list of normalized coords
+        """
+        return deepcopy(self._normalized_dict["buildings"])
