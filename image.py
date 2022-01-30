@@ -103,13 +103,13 @@ class ImageCreator:
         out_img.save(filename, "PNG")
 
     def drawTrees(self, pos: list[tuple[float, float]]) -> None:
-        self._drawMultipleCircles(pos, 2, (0, 0, 0))
+        self._drawMultipleCircles(pos, 2, (16, 16, 16))
 
     def drawWater(self, pos: list[tuple[float, float]]) -> None:
-        self._drawMultiplePoly(pos, (8, 8, 8))
+        self._drawMultiplePoly(pos, (24, 24, 24))
 
     def drawParks(self, pos: list[tuple[float, float]]) -> None:
-        self._drawMultiplePoly(pos, (32, 32, 32))
+        self._drawMultiplePoly(pos, (64, 64, 64))
 
     def drawBuildings(self, pos: list[tuple[float, float]]) -> None:
-        self._drawMultiplePoly(pos, (0, 0, 0))
+        self._drawMultiplePoly(pos, (16, 16, 16))
