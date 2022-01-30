@@ -55,10 +55,13 @@ class CityMap:
             },
         ]
 
+        # request timing
         self._timeout = 60
-
+        self._try_again = 10
+        # initialize instances
         self._nominatim = Nominatim()
         self._overpass = Overpass()
+        # load bbox and city
         self._loadCity()
 
     def _loadCity(self) -> None:
@@ -164,8 +167,9 @@ class CityMap:
                 except Exception as e:
                     # OFC they couldn't raise proper exceptions.
                     # this exceptions is a "generic" exception.
-                    print("Error", e, "Trying again in 10 seconds")
-                    sleep(10)
+                    print(e)
+                    print(f"Trying again in {self._try_again} seconds...")
+                    sleep(self._try_again)
 
             if not results.elements():
                 continue

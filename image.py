@@ -2,12 +2,12 @@ from PIL import Image, ImageDraw
 
 
 class ImageCreator:
-    def __init__(self, width: int = 2000, height: int = 2000, scl: float = 0.8):
+    def __init__(self, width: int = 2000, height: int = 2000, scl: float = 0.75):
         self._sizes = (width, height)
         self._scl = scl
         self._border = tuple(s * (1 - self._scl) / 2 for s in self._sizes)
 
-        self._image = Image.new("RGB", self._sizes, "white")
+        self._image = Image.new("RGB", self._sizes, (220, 220, 220))
         self._draw = ImageDraw.Draw(self._image)
 
     def _drawCircle(
@@ -103,13 +103,13 @@ class ImageCreator:
         out_img.save(filename, "PNG")
 
     def drawTrees(self, pos: list[tuple[float, float]]) -> None:
-        self._drawMultipleCircles(pos, 1, "darkgreen")
+        self._drawMultipleCircles(pos, 2, (0, 0, 0))
 
     def drawWater(self, pos: list[tuple[float, float]]) -> None:
-        self._drawMultiplePoly(pos, "blue")
+        self._drawMultiplePoly(pos, (8, 8, 8))
 
     def drawParks(self, pos: list[tuple[float, float]]) -> None:
-        self._drawMultiplePoly(pos, "lightgreen")
+        self._drawMultiplePoly(pos, (32, 32, 32))
 
     def drawBuildings(self, pos: list[tuple[float, float]]) -> None:
-        self._drawMultiplePoly(pos, "brown")
+        self._drawMultiplePoly(pos, (0, 0, 0))
