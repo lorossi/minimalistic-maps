@@ -28,21 +28,55 @@ class ImageCreator:
 
         self._draw.ellipse(xy, fill=fill)
 
+    def _drawMultipleCircles(
+        self,
+        coords: list[tuple[int, int]],
+        r: float = 1,
+        fill: tuple[int, int, int, int] | str = "black",
+    ) -> None:
+        """Draws multiple circles from a list of relative positions (in range [0-1] for both x and y)
+
+        Args:
+            coords (tuple[int, int]): circle center coordinates
+            r (float, optional): Circle radius. Defaults to 1.
+            fill (tuple[int, int, int, int] | str, optional): Fill color. Defaults to "black".
+        """
+
+        for c in coords:
+            abs_coords = self._relativeToAbsolute(c)
+            self._drawCircle(abs_coords, r, fill)
+
     def _drawPoly(
         self,
         coords: list[tuple[int, int]],
-        width: float = 1,
         fill: tuple[int, int, int, int] | str = "black",
     ) -> None:
         """Draws a polygon according to its relative position (in range [0-1] for both x and y)
 
         Args:
             coords (list[tuple[int, int]]): list of relative coordinates
-            width (float): line width. Defaults to 1;
             fill (tuple[int, int, int, int] | str, optional): Fill color. Defaults to "black".
         """
-        # arc bounding box
-        self._draw.polygon(coords, width=width, fill=fill)
+        self._draw.polygon(coords, width=0, fill=fill)
+
+    def _drawMultiplePoly(
+        self,
+        coords: list[tuple[int, int]],
+        fill: tuple[int, int, int, int] | str = "black",
+    ) -> None:
+        """Draws multiple polygon from list of relative positions (in range [0-1] for both x and y)
+
+        Args:
+            coords (list[tuple[int, int]]): list of relative coordinates
+            fill (tuple[int, int, int, int] | str, optional): Fill color. Defaults to "black".
+        """
+        for c in coords:
+            abs_coords = self._relativeToAbsolute(c)
+
+            if len(abs_coords) < 3:
+                continue
+
+            self._drawPoly(abs_coords, fill)
 
     def _relativeToAbsolute(self, rel: tuple[float, float]) -> tuple[float, float]:
         if isinstance(rel, tuple):
@@ -67,33 +101,13 @@ class ImageCreator:
         self._image.save(filename, "PNG")
 
     def drawTrees(self, pos: list[tuple[float, float]]) -> None:
-        for p in pos:
-            abs_pos = self._relativeToAbsolute(p)
-            self._drawCircle(abs_pos, 1, "darkgreen")
+        self._drawMultipleCircles(pos, 1, "darkgreen")
 
     def drawWater(self, pos: list[tuple[float, float]]) -> None:
-        for p in pos:
-            abs_pos = self._relativeToAbsolute(p)
-
-            if len(abs_pos) < 3:
-                continue
-
-            self._drawPoly(abs_pos, 1, "blue")
+        self._drawMultiplePoly(pos, "blue")
 
     def drawParks(self, pos: list[tuple[float, float]]) -> None:
-        for p in pos:
-            abs_pos = self._relativeToAbsolute(p)
-
-            if len(abs_pos) < 3:
-                continue
-
-            self._drawPoly(abs_pos, 1, "lightgreen")
+        self._drawMultiplePoly(pos, "lightgreen")
 
     def drawBuildings(self, pos: list[tuple[float, float]]) -> None:
-        for p in pos:
-            abs_pos = self._relativeToAbsolute(p)
-
-            if len(abs_pos) < 3:
-                continue
-
-            self._drawPoly(abs_pos, 1, "brown")
+        self._drawMultiplePoly(pos, "brown")
