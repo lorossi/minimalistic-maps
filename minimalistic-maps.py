@@ -7,8 +7,8 @@ Reference:
 """
 
 
-from citymap import CityMap
-from image import ImageCreator
+from map import CityMap
+from image import CityImage
 
 
 def main():
@@ -18,7 +18,7 @@ def main():
         c = CityMap(city)
         c.loadFeatures()
 
-        i = ImageCreator()
+        i = CityImage(background_color=(240, 240, 240))
 
         i.drawTrees(c.trees)
         i.drawWater(c.water)
@@ -27,9 +27,11 @@ def main():
         # needed to fix coordinates to xy
         i.rotate(90)
 
-        outfile = f"output/{city}.png"
+        outfile = f"output/{city.lower()}-minimal.png"
         i.addTitle(city)
         i.save(outfile)
+
+        i = CityImage(background_color=(15, 15, 15))
 
 
 if __name__ == "__main__":

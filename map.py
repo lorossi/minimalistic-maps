@@ -1,13 +1,11 @@
 from time import sleep
-from copy import deepcopy
 from math import cos, sin, asin, radians, sqrt
-from multiprocessing.sharedctypes import Value
 from OSMPythonTools.nominatim import Nominatim
 from OSMPythonTools.overpass import overpassQueryBuilder, Overpass
 
 
 class CityMap:
-    def __init__(self, city: str, radius: float = 3000) -> None:
+    def __init__(self, city: str, radius: float = None) -> None:
         """Create city map
 
         Args:
@@ -15,6 +13,10 @@ class CityMap:
             radius (float, optional): City radius, in meters. Defaults to 3000.
         """
         self._city = city
+
+        if not radius:
+            radius = 3000
+
         self._radius = radius
 
         self._elements_dict = {}
@@ -48,11 +50,7 @@ class CityMap:
                 "tag": ["building"],
                 "topology": ["way"],
             },
-            {
-                "name": "general",
-                "tag": ["building"],
-                "topology": ["way"],
-            },
+            {"name": "bench", "tag": ["amenity=bench"], "topology": ["node"]},
         ]
 
         # request timing
@@ -63,6 +61,21 @@ class CityMap:
         self._overpass = Overpass()
         # load bbox and city
         self._loadCity()
+
+    def __getattr__(self, feature: str) -> list[tuple[float, float]]:
+        """Returns a list of features. Too check the available features, try using the features attribute
+
+        Returns:
+            [type]: [description]
+        """
+        if feature in self._normalized_dict:
+            return self._normalized_dict[feature]
+
+        return []
+
+    @property
+    def features(self) -> list[str]:
+        return [f for f in self._normalized_dict]
 
     def _loadCity(self) -> None:
         """Loads city area id and bounding box (both in xy and coordinates forms)"""
@@ -227,39 +240,3 @@ class CityMap:
         for feature in self._features_list:
             self._queryOSM(**feature)
             self._normalizeElements(**feature)
-
-    @property
-    def trees(self) -> list[tuple[float, float]]:
-        """List of normalized coords for trees
-
-        Returns:
-            list[tuple[float, float]]: list of normalized coords
-        """
-        return deepcopy(self._normalized_dict["trees"])
-
-    @property
-    def water(self) -> list[list[tuple[float, float]]]:
-        """List of normalized coords for water bodies
-
-        Returns:
-            list[tuple[float, float]]: list of normalized coords
-        """
-        return deepcopy(self._normalized_dict["water"])
-
-    @property
-    def parks(self) -> list[list[tuple[float, float]]]:
-        """List of normalized coords for parks
-
-        Returns:
-            list[tuple[float, float]]: list of normalized coords
-        """
-        return deepcopy(self._normalized_dict["parks"])
-
-    @property
-    def buildings(self) -> list[list[tuple[float, float]]]:
-        """List of normalized coords for buildings
-
-        Returns:
-            list[tuple[float, float]]: list of normalized coords
-        """
-        return deepcopy(self._normalized_dict["buildings"])

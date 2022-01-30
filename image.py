@@ -1,11 +1,12 @@
 from PIL import Image, ImageDraw, ImageFont
 
 
-class ImageCreator:
+class CityImage:
     def __init__(
         self,
         width: int = 2000,
         height: int = 2000,
+        background_color: tuple[float, float, float] | str = "white",
         scl: float = 0.8,
         supersample: float = 16,
     ):
@@ -15,10 +16,10 @@ class ImageCreator:
         self._scl = scl
         self._border = tuple(s * (1 - self._scl) / 2 for s in self._sizes)
 
-        self._image = Image.new("RGB", self._sizes, (240, 240, 240))
+        self._image = Image.new("RGB", self._sizes, background_color)
         self._draw = ImageDraw.Draw(self._image)
 
-    def _drawCircle(
+    def drawCircle(
         self,
         coords: tuple[int, int],
         r: float = 1,
@@ -36,7 +37,7 @@ class ImageCreator:
 
         self._draw.ellipse(xy, fill=fill)
 
-    def _drawMultipleCircles(
+    def drawMultipleCircles(
         self,
         coords: list[tuple[int, int]],
         r: float = 1,
@@ -52,9 +53,9 @@ class ImageCreator:
 
         for c in coords:
             abs_coords = self._relativeToAbsolute(c)
-            self._drawCircle(abs_coords, r, fill)
+            self.drawCircle(abs_coords, r, fill)
 
-    def _drawPoly(
+    def drawPoly(
         self,
         coords: list[tuple[int, int]],
         fill: tuple[int, int, int] | str = "black",
@@ -67,7 +68,7 @@ class ImageCreator:
         """
         self._draw.polygon(coords, width=0, fill=fill)
 
-    def _drawMultiplePoly(
+    def drawMultiplePoly(
         self,
         coords: list[tuple[int, int]],
         fill: tuple[int, int, int] | str = "black",
@@ -84,9 +85,19 @@ class ImageCreator:
             if len(abs_coords) < 3:
                 continue
 
-            self._drawPoly(abs_coords, fill)
+            self.drawPoly(abs_coords, fill)
 
-    def _relativeToAbsolute(self, rel: tuple[float, float]) -> tuple[float, float]:
+    def _relativeToAbsolute(
+        self, rel: tuple[float, float] | list[tuple[float, float]]
+    ) -> list[tuple[float, float]]:
+        """Converts relative coordinates to absolute coordinates
+
+        Args:
+            rel (tuple[float, float] | list[tuple[float, float]]): list of relative coordinates
+
+        Returns:
+            list[tuple[float, float]]: List of absolute coordinates
+        """
         if isinstance(rel, tuple):
             return tuple(
                 self._border[x] + rel[x] * self._sizes[x] * self._scl for x in range(2)
@@ -98,6 +109,11 @@ class ImageCreator:
         )
 
     def addTitle(self, text: str) -> None:
+        """Draws a title on the image
+
+        Args:
+            text (str): Title text
+        """
         size = int((1 - self._scl) * self._sizes[0] * 0.3)
         dy = int((1 - self._scl) * self._sizes[1] * 0.1)
         dx = self._sizes[0] // 2
@@ -114,7 +130,12 @@ class ImageCreator:
             anchor="mt",
         )
 
-    def rotate(self, angle):
+    def rotate(self, angle: float) -> None:
+        """Rotates image by a set angle (in degrees)
+
+        Args:
+            angle (float)
+        """
         self._image.rotate(angle)
 
     def save(self, filename: str) -> None:
@@ -131,13 +152,13 @@ class ImageCreator:
         out_img.save(filename, "PNG")
 
     def drawTrees(self, pos: list[tuple[float, float]]) -> None:
-        self._drawMultipleCircles(pos, 2, (16, 16, 16))
+        self.drawMultipleCircles(pos, 2, (16, 16, 16))
 
     def drawWater(self, pos: list[tuple[float, float]]) -> None:
-        self._drawMultiplePoly(pos, (24, 24, 24))
+        self.drawMultiplePoly(pos, (24, 24, 24))
 
     def drawParks(self, pos: list[tuple[float, float]]) -> None:
-        self._drawMultiplePoly(pos, (200, 200, 200))
+        self.drawMultiplePoly(pos, (200, 200, 200))
 
     def drawBuildings(self, pos: list[tuple[float, float]]) -> None:
-        self._drawMultiplePoly(pos, (16, 16, 16))
+        self.drawMultiplePoly(pos, (16, 16, 16))
