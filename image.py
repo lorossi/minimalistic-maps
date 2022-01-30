@@ -1,4 +1,4 @@
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 
 
 class ImageCreator:
@@ -14,14 +14,14 @@ class ImageCreator:
         self,
         coords: tuple[int, int],
         r: float = 1,
-        fill: tuple[int, int, int, int] | str = "black",
+        fill: tuple[int, int, int] | str = "black",
     ) -> None:
         """Draws a circle according to its relative position (in range [0-1] for both x and y)
 
         Args:
             coords (tuple[int, int]): circle center coordinates
             r (float, optional): Circle radius. Defaults to 1.
-            fill (tuple[int, int, int, int] | str, optional): Fill color. Defaults to "black".
+            fill (tuple[int, int,  int] | str, optional): Fill color. Defaults to "black".
         """
         # arc bounding box
         xy = (coords[0] - r, coords[1] - r, coords[0] + r, coords[1] + r)
@@ -32,14 +32,14 @@ class ImageCreator:
         self,
         coords: list[tuple[int, int]],
         r: float = 1,
-        fill: tuple[int, int, int, int] | str = "black",
+        fill: tuple[int, int, int] | str = "black",
     ) -> None:
         """Draws multiple circles from a list of relative positions (in range [0-1] for both x and y)
 
         Args:
             coords (tuple[int, int]): circle center coordinates
             r (float, optional): Circle radius. Defaults to 1.
-            fill (tuple[int, int, int, int] | str, optional): Fill color. Defaults to "black".
+            fill (tuple[int, int,  int] | str, optional): Fill color. Defaults to "black".
         """
 
         for c in coords:
@@ -49,26 +49,26 @@ class ImageCreator:
     def _drawPoly(
         self,
         coords: list[tuple[int, int]],
-        fill: tuple[int, int, int, int] | str = "black",
+        fill: tuple[int, int, int] | str = "black",
     ) -> None:
         """Draws a polygon according to its relative position (in range [0-1] for both x and y)
 
         Args:
             coords (list[tuple[int, int]]): list of relative coordinates
-            fill (tuple[int, int, int, int] | str, optional): Fill color. Defaults to "black".
+            fill (tuple[int, int,  int] | str, optional): Fill color. Defaults to "black".
         """
         self._draw.polygon(coords, width=0, fill=fill)
 
     def _drawMultiplePoly(
         self,
         coords: list[tuple[int, int]],
-        fill: tuple[int, int, int, int] | str = "black",
+        fill: tuple[int, int, int] | str = "black",
     ) -> None:
         """Draws multiple polygon from list of relative positions (in range [0-1] for both x and y)
 
         Args:
             coords (list[tuple[int, int]]): list of relative coordinates
-            fill (tuple[int, int, int, int] | str, optional): Fill color. Defaults to "black".
+            fill (tuple[int, int,  int] | str, optional): Fill color. Defaults to "black".
         """
         for c in coords:
             abs_coords = self._relativeToAbsolute(c)
@@ -89,6 +89,23 @@ class ImageCreator:
             for r in rel
         )
 
+    def addTitle(self, text: str) -> None:
+        size = int((1 - self._scl) * self._sizes[0] * 0.3)
+        pos = tuple(int((1 - self._scl) * self._sizes[x] * 0.1) for x in [0, 1])
+        font = ImageFont.truetype("src/Chivo-Light.ttf", size)
+        fill = (16, 16, 16)
+
+        self._draw.text(
+            pos,
+            text,
+            fill=fill,
+            font=font,
+            anchor="lt",
+        )
+
+    def rotate(self, angle):
+        self._image.rotate(angle)
+
     def save(self, filename: str) -> None:
         """Saves image as a png file
 
@@ -98,9 +115,7 @@ class ImageCreator:
         if filename[-4:] != ".png":
             filename += ".png"
 
-        #! FIX this is bad BUT it works
-        out_img = self._image.rotate(90)
-        out_img.save(filename, "PNG")
+        self._image.save(filename, "PNG")
 
     def drawTrees(self, pos: list[tuple[float, float]]) -> None:
         self._drawMultipleCircles(pos, 2, (16, 16, 16))
@@ -109,7 +124,7 @@ class ImageCreator:
         self._drawMultiplePoly(pos, (24, 24, 24))
 
     def drawParks(self, pos: list[tuple[float, float]]) -> None:
-        self._drawMultiplePoly(pos, (64, 64, 64))
+        self._drawMultiplePoly(pos, (128, 128, 128))
 
     def drawBuildings(self, pos: list[tuple[float, float]]) -> None:
         self._drawMultiplePoly(pos, (16, 16, 16))

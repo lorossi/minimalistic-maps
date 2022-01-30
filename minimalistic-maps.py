@@ -19,12 +19,16 @@ def main():
         c.loadFeatures()
 
         i = ImageCreator()
+
         i.drawTrees(c.trees)
         i.drawWater(c.water)
         i.drawParks(c.parks)
         i.drawBuildings(c.buildings)
+        # needed to fix coordinates to xy
+        i.rotate(90)
 
         outfile = f"output/{city}.png"
+        i.addTitle(city)
         i.save(outfile)
 
 
