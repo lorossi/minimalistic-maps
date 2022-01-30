@@ -2,12 +2,20 @@ from PIL import Image, ImageDraw, ImageFont
 
 
 class ImageCreator:
-    def __init__(self, width: int = 2000, height: int = 2000, scl: float = 0.75):
-        self._sizes = (width, height)
+    def __init__(
+        self,
+        width: int = 2000,
+        height: int = 2000,
+        scl: float = 0.8,
+        supersample: float = 16,
+    ):
+
+        self._supersample = supersample
+        self._sizes = (width * self._supersample, height * self._supersample)
         self._scl = scl
         self._border = tuple(s * (1 - self._scl) / 2 for s in self._sizes)
 
-        self._image = Image.new("RGB", self._sizes, (220, 220, 220))
+        self._image = Image.new("RGB", self._sizes, (240, 240, 240))
         self._draw = ImageDraw.Draw(self._image)
 
     def _drawCircle(
@@ -81,26 +89,29 @@ class ImageCreator:
     def _relativeToAbsolute(self, rel: tuple[float, float]) -> tuple[float, float]:
         if isinstance(rel, tuple):
             return tuple(
-                self._border[x] + rel[x] * self._sizes[x] * self._scl for x in [0, 1]
+                self._border[x] + rel[x] * self._sizes[x] * self._scl for x in range(2)
             )
 
         return list(
-            tuple(self._border[x] + r[x] * self._sizes[x] * self._scl for x in [0, 1])
+            tuple(self._border[x] + r[x] * self._sizes[x] * self._scl for x in range(2))
             for r in rel
         )
 
     def addTitle(self, text: str) -> None:
         size = int((1 - self._scl) * self._sizes[0] * 0.3)
-        pos = tuple(int((1 - self._scl) * self._sizes[x] * 0.1) for x in [0, 1])
+        dy = int((1 - self._scl) * self._sizes[1] * 0.1)
+        dx = self._sizes[0] // 2
+
         font = ImageFont.truetype("src/Chivo-Light.ttf", size)
-        fill = (16, 16, 16)
+        fill = (24, 24, 24)
 
         self._draw.text(
-            pos,
+            (dx, dy),
             text,
             fill=fill,
             font=font,
-            anchor="lt",
+            align="center",
+            anchor="mt",
         )
 
     def rotate(self, angle):
@@ -115,7 +126,9 @@ class ImageCreator:
         if filename[-4:] != ".png":
             filename += ".png"
 
-        self._image.save(filename, "PNG")
+        real_size = tuple(int(self._sizes[x] / self._supersample) for x in range(2))
+        out_img = self._image.resize(real_size, resample=Image.ANTIALIAS)
+        out_img.save(filename, "PNG")
 
     def drawTrees(self, pos: list[tuple[float, float]]) -> None:
         self._drawMultipleCircles(pos, 2, (16, 16, 16))
@@ -124,7 +137,7 @@ class ImageCreator:
         self._drawMultiplePoly(pos, (24, 24, 24))
 
     def drawParks(self, pos: list[tuple[float, float]]) -> None:
-        self._drawMultiplePoly(pos, (128, 128, 128))
+        self._drawMultiplePoly(pos, (200, 200, 200))
 
     def drawBuildings(self, pos: list[tuple[float, float]]) -> None:
         self._drawMultiplePoly(pos, (16, 16, 16))
