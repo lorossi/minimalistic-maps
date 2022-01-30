@@ -35,13 +35,21 @@ class CityMap:
                 "tag": [
                     "leisure=park",
                     "leisure=garden",
+                    "leisure=dog_park",
+                    "leisure=pitch",
                     "landuse=green",
                     "landuse=grass",
+                    "landuse=cemetery",
                 ],
                 "topology": ["area"],
             },
             {
                 "name": "buildings",
+                "tag": ["building"],
+                "topology": ["way"],
+            },
+            {
+                "name": "general",
                 "tag": ["building"],
                 "topology": ["way"],
             },
