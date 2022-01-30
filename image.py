@@ -98,7 +98,9 @@ class ImageCreator:
         if filename[-4:] != ".png":
             filename += ".png"
 
-        self._image.save(filename, "PNG")
+        #! FIX this is bad BUT it works
+        out_img = self._image.rotate(90)
+        out_img.save(filename, "PNG")
 
     def drawTrees(self, pos: list[tuple[float, float]]) -> None:
         self._drawMultipleCircles(pos, 1, "darkgreen")
