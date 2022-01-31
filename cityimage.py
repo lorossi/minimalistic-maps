@@ -176,12 +176,12 @@ class DarkCityImage(CityImage):
         Args:
             text (str): Title text
         """
-        size = int((1 - self._scl) * self._sizes[0] * 0.25)
+        size = int((1 - self._scl) * self._sizes[0] * 0.2)
         dy = int((1 - self._scl) * self._sizes[1] * 0.25)
         dx = self._sizes[0] // 2
 
         font = ImageFont.truetype("src/Chivo-Light.ttf", size)
-        fill = (225, 225, 225)
+        fill = (200, 200, 200)
 
         self._draw.text(
             (dx, dy),
