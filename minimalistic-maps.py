@@ -49,7 +49,7 @@ def main():
         i.drawBuildings(r.buildings)
 
         i.addTitle(city)
-        logging.info("Saving image")
+        logging.info(f"Saving image {filename}")
         i.save(f"output/{filename}-minimal.png")
 
         logging.info(f"Creating minimal map for {city}")
@@ -60,7 +60,7 @@ def main():
         m.loadFeatures()
 
         colors = ["#FF355E", "#FF6037", "#FFFF66", "#66FF66", "#50BFE6", "FF00CC"]
-        colors.shuffle()
+        shuffle(colors)
 
         for tag, coords in m.circular_features.items():
 
@@ -69,7 +69,7 @@ def main():
             i = DarkCityImage()
             i.drawMultipleCircles(coords, fill=colors.pop(), radius=10)
             i.addTitle(title)
-            logging.info("Saving image")
+            logging.info(f"Saving image {filename}-{tag}")
             i.save(f"output/{filename}-{tag}.png")
 
 
