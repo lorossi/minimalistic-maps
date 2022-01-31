@@ -7,15 +7,17 @@ Reference:
 """
 
 
-from map import CityMap
-from image import CityImage
+from citymap import RoundCityMap
+from cityimage import CityImage
+from string import ascii_lowercase
 
 
 def main():
-    cities = ["Milano"]
+    cities = ["Milano, Italia"]
 
     for city in cities:
-        c = CityMap(city)
+        c = RoundCityMap(city)
+        c.loadCity()
         c.loadFeatures()
 
         i = CityImage(background_color=(240, 240, 240))
@@ -24,10 +26,11 @@ def main():
         i.drawWater(c.water)
         i.drawParks(c.parks)
         i.drawBuildings(c.buildings)
-        # needed to fix coordinates to xy
-        i.rotate(90)
 
-        outfile = f"output/{city.lower()}-minimal.png"
+        filename = "".join(
+            [c for c in city.lower() if c in ascii_lowercase or c == " "]
+        ).replace(" ", "-")
+        outfile = f"output/{filename}-minimal.png"
         i.addTitle(city)
         i.save(outfile)
 

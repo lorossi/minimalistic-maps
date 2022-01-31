@@ -8,13 +8,17 @@ class CityImage:
         height: int = 2000,
         background_color: tuple[float, float, float] | str = "white",
         scl: float = 0.8,
-        supersample: float = 16,
+        supersample: float = 8,
     ):
 
         self._supersample = supersample
         self._sizes = (width * self._supersample, height * self._supersample)
         self._scl = scl
-        self._border = tuple(s * (1 - self._scl) / 2 for s in self._sizes)
+
+        self._border_rations = [0.5, 0.75]
+        self._border = tuple(
+            self._sizes[x] * (1 - self._scl) * self._border_rations[x] for x in range(2)
+        )
 
         self._image = Image.new("RGB", self._sizes, background_color)
         self._draw = ImageDraw.Draw(self._image)
@@ -108,14 +112,14 @@ class CityImage:
             for r in rel
         )
 
-    def addTitle(self, text: str) -> None:
+    def addTitle(self, title: str) -> None:
         """Draws a title on the image
 
         Args:
             text (str): Title text
         """
-        size = int((1 - self._scl) * self._sizes[0] * 0.3)
-        dy = int((1 - self._scl) * self._sizes[1] * 0.1)
+        size = int((1 - self._scl) * self._sizes[0] * 0.4)
+        dy = int((1 - self._scl) * self._sizes[1] * 0.25)
         dx = self._sizes[0] // 2
 
         font = ImageFont.truetype("src/Chivo-Light.ttf", size)
@@ -123,20 +127,12 @@ class CityImage:
 
         self._draw.text(
             (dx, dy),
-            text,
+            title,
             fill=fill,
             font=font,
             align="center",
             anchor="mt",
         )
-
-    def rotate(self, angle: float) -> None:
-        """Rotates image by a set angle (in degrees)
-
-        Args:
-            angle (float)
-        """
-        self._image.rotate(angle)
 
     def save(self, filename: str) -> None:
         """Saves image as a png file
