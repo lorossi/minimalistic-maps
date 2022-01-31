@@ -1,3 +1,4 @@
+from re import L
 from PIL import Image, ImageDraw, ImageFont
 
 
@@ -6,7 +7,7 @@ class CityImage:
         self,
         width: int = 2000,
         height: int = 2000,
-        background_color: tuple[float, float, float] | str = "white",
+        background_color: tuple[float, float, float] | str = (240, 240, 240),
         scl: float = 0.8,
         supersample: float = 8,
     ):
@@ -26,38 +27,43 @@ class CityImage:
     def drawCircle(
         self,
         coords: tuple[int, int],
-        r: float = 1,
+        radius: float = 1,
         fill: tuple[int, int, int] | str = "black",
     ) -> None:
         """Draws a circle according to its relative position (in range [0-1] for both x and y)
 
         Args:
             coords (tuple[int, int]): circle center coordinates
-            r (float, optional): Circle radius. Defaults to 1.
+            radius (float, optional): Circle radius. Defaults to 1.
             fill (tuple[int, int,  int] | str, optional): Fill color. Defaults to "black".
         """
         # arc bounding box
-        xy = (coords[0] - r, coords[1] - r, coords[0] + r, coords[1] + r)
+        xy = (
+            coords[0] - radius,
+            coords[1] - radius,
+            coords[0] + radius,
+            coords[1] + radius,
+        )
 
         self._draw.ellipse(xy, fill=fill)
 
     def drawMultipleCircles(
         self,
         coords: list[tuple[int, int]],
-        r: float = 1,
+        radius: float = 1,
         fill: tuple[int, int, int] | str = "black",
     ) -> None:
         """Draws multiple circles from a list of relative positions (in range [0-1] for both x and y)
 
         Args:
             coords (tuple[int, int]): circle center coordinates
-            r (float, optional): Circle radius. Defaults to 1.
+            radius (float, optional): Circle radius. Defaults to 1.
             fill (tuple[int, int,  int] | str, optional): Fill color. Defaults to "black".
         """
 
         for c in coords:
             abs_coords = self._relativeToAbsolute(c)
-            self.drawCircle(abs_coords, r, fill)
+            self.drawCircle(abs_coords, radius, fill)
 
     def drawPoly(
         self,
@@ -158,3 +164,30 @@ class CityImage:
 
     def drawBuildings(self, pos: list[tuple[float, float]]) -> None:
         self.drawMultiplePoly(pos, (16, 16, 16))
+
+
+class DarkCityImage(CityImage):
+    def __init__(self):
+        super().__init__(background_color=(15, 15, 15))
+
+    def addTitle(self, title: str) -> None:
+        """Draws a title on the image
+
+        Args:
+            text (str): Title text
+        """
+        size = int((1 - self._scl) * self._sizes[0] * 0.25)
+        dy = int((1 - self._scl) * self._sizes[1] * 0.25)
+        dx = self._sizes[0] // 2
+
+        font = ImageFont.truetype("src/Chivo-Light.ttf", size)
+        fill = (225, 225, 225)
+
+        self._draw.text(
+            (dx, dy),
+            title,
+            fill=fill,
+            font=font,
+            align="center",
+            anchor="mt",
+        )

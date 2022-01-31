@@ -6,35 +6,56 @@ Reference:
 - OSMPythonTools https://github.com/mocnik-science/osm-python-tools
 """
 
-
-from citymap import RoundCityMap
-from cityimage import CityImage
 from string import ascii_lowercase
+
+from citymap import RoundCityMap, MinimalMap
+from cityimage import CityImage, DarkCityImage
 
 
 def main():
-    cities = ["Milano, Italia"]
+    cities = {
+        "Milano, Italia": 3000,
+        "Manhattan, NY": 10000,
+        "Oslo, Norway": 3000,
+        "Tokyo, Japan": 10000,
+    }
 
-    for city in cities:
-        c = RoundCityMap(city)
-        c.loadCity()
-        c.loadFeatures()
-
-        i = CityImage(background_color=(240, 240, 240))
-
-        i.drawTrees(c.trees)
-        i.drawWater(c.water)
-        i.drawParks(c.parks)
-        i.drawBuildings(c.buildings)
-
+    for city, radius in cities.items():
         filename = "".join(
-            [c for c in city.lower() if c in ascii_lowercase or c == " "]
-        ).replace(" ", "-")
-        outfile = f"output/{filename}-minimal.png"
-        i.addTitle(city)
-        i.save(outfile)
+            [
+                c
+                for c in city.lower().replace(" ", "-")
+                if c in ascii_lowercase or c == "-"
+            ]
+        )
 
-        i = CityImage(background_color=(15, 15, 15))
+        r = RoundCityMap(city, radius)
+        r.loadCity()
+        r.loadFeatures()
+
+        i = CityImage()
+
+        i.drawTrees(r.trees)
+        i.drawWater(r.water)
+        i.drawParks(r.parks)
+        i.drawBuildings(r.buildings)
+
+        i.addTitle(city)
+        i.save(f"output/{filename}-minimal.png")
+
+        m = MinimalMap(city)
+        m.loadCity()
+        m.loadFeatures()
+
+        colors = ["red", "green", "yellow", "blue"]
+
+        for tag, coords in m.circular_features.items():
+            title = f"{city} and its {len(coords)} {tag}"
+
+            i = DarkCityImage()
+            i.drawMultipleCircles(coords, fill=colors.pop(), radius=10)
+            i.addTitle(title)
+            i.save(f"output/{filename}-{tag}.png")
 
 
 if __name__ == "__main__":

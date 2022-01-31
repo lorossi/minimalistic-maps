@@ -114,7 +114,7 @@ class CityMap:
         Returns:
             bool:
         """
-        return True
+        raise NotImplementedError
 
     def _queryOSM(self, **kwargs) -> None:
         """Query OSM and load data into self._elements_dict
@@ -210,6 +210,7 @@ class CityMap:
                     # sometimes shape are just an element
                     if len(shape) == 1:
                         shape = shape[0]
+
                     # filter coords and convert to xy
                     coords = [
                         self._coordsToXY(*s[::-1])
@@ -237,10 +238,14 @@ class MinimalMap(CityMap):
     def __init__(self, city: str):
         super().__init__(city)
         self._features_list = [
-            {"name": "bench", "tag": ["amenity=bench"], "topology": ["node"]},
-            {"name": "traffic", "tag": ["traffic_signals"], "topology": ["node"]},
+            {"name": "benches", "tag": ["amenity=bench"], "topology": ["node"]},
             {
-                "name": "water fountain",
+                "name": "traffic signals",
+                "tag": ["traffic_signals"],
+                "topology": ["node"],
+            },
+            {
+                "name": "water fountains",
                 "tag": ["amenity=drinking_water"],
                 "topology": ["node"],
             },
@@ -248,7 +253,7 @@ class MinimalMap(CityMap):
 
 
 class RoundCityMap(CityMap):
-    def __init__(self, city: str, radius: float = 5000):
+    def __init__(self, city: str, radius: float = 3000):
         """Creates a round city
 
         Args:
