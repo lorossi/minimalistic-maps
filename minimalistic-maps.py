@@ -20,9 +20,9 @@ def main():
 
     cities = {
         "Milano, Italia": 3000,
-        "Manhattan, NY": 10000,
+        "Paris, France": 3000,
         "Oslo, Norway": 3000,
-        "Tokyo, Japan": 10000,
+        "Barcellona, Spain": 3000,
     }
 
     for city, radius in cities.items():
@@ -59,7 +59,15 @@ def main():
         logging.info("Loading features")
         m.loadFeatures()
 
-        colors = ["#FF355E", "#FF6037", "#FFFF66", "#66FF66", "#50BFE6", "FF00CC"]
+        colors = [
+            "#FF355E",
+            "#FF9933",
+            "#FF6037",
+            "#FFFF66",
+            "#66FF66",
+            "#50BFE6",
+            "#FF00CC",
+        ]
         shuffle(colors)
 
         for tag, coords in m.circular_features.items():

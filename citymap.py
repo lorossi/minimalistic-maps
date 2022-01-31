@@ -21,7 +21,7 @@ class CityMap:
         self._features_list = []
 
         # request timing
-        self._timeout = 60
+        self._timeout = 10
         self._try_again = 10
         # initialize instances
         self._nominatim = Nominatim()
@@ -248,6 +248,21 @@ class MinimalMap(CityMap):
             {
                 "name": "water fountains",
                 "tag": ["amenity=drinking_water"],
+                "topology": ["node"],
+            },
+            {
+                "name": "trees",
+                "tag": ["natural=tree"],
+                "topology": ["node"],
+            },
+            {
+                "name": "bars",
+                "tag": ["amenity=bar"],
+                "topology": ["node"],
+            },
+            {
+                "name": "restaurants",
+                "tag": ["amenity=restaurant"],
                 "topology": ["node"],
             },
         ]
