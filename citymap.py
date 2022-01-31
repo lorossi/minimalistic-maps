@@ -1,3 +1,5 @@
+import logging
+
 from time import sleep
 from math import cos, sin, asin, radians, sqrt
 from OSMPythonTools.nominatim import Nominatim
@@ -145,11 +147,10 @@ class CityMap:
                         timeout=self._timeout,
                     )
                     break
-                except Exception as e:
+                except Exception as _:
                     # OFC they couldn't raise proper exceptions.
                     # this exceptions is a "generic" exception.
-                    print(e)
-                    print(f"Trying again in {self._try_again} seconds...")
+                    logging.error(f"Trying again in {self._try_again} seconds...")
                     sleep(self._try_again)
 
             if not results.elements():
@@ -250,6 +251,10 @@ class MinimalMap(CityMap):
                 "topology": ["node"],
             },
         ]
+
+    def _isPositionValid(self, *_) -> bool:
+        "All positions are valid in the minimal map. There's no need to check if they are in bbox"
+        return True
 
 
 class RoundCityMap(CityMap):
