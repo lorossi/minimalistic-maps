@@ -15,6 +15,8 @@ class CityImage:
         self._supersample = supersample
         self._sizes = (width * self._supersample, height * self._supersample)
         self._scl = scl
+        self._title_color = (24, 24, 24)
+        self._title_size = int((1 - self._scl) * self._sizes[0] * 0.4)
 
         self._border_rations = [0.5, 0.75]
         self._border = tuple(
@@ -118,23 +120,21 @@ class CityImage:
             for r in rel
         )
 
-    def addTitle(self, title: str) -> None:
+    def drawTitle(self, title: str) -> None:
         """Draws a title on the image
 
         Args:
             text (str): Title text
         """
-        size = int((1 - self._scl) * self._sizes[0] * 0.4)
         dy = int((1 - self._scl) * self._sizes[1] * 0.25)
         dx = self._sizes[0] // 2
 
-        font = ImageFont.truetype("src/Chivo-Light.ttf", size)
-        fill = (24, 24, 24)
+        font = ImageFont.truetype("src/Chivo-Light.ttf", self._title_size)
 
         self._draw.text(
             (dx, dy),
             title,
-            fill=fill,
+            fill=self._title_color,
             font=font,
             align="center",
             anchor="mt",
@@ -169,25 +169,23 @@ class CityImage:
 class DarkCityImage(CityImage):
     def __init__(self):
         super().__init__(background_color=(15, 15, 15))
+        self._title_color = (200, 200, 200)
 
-    def addTitle(self, title: str) -> None:
-        """Draws a title on the image
+    def drawTrees(self, pos: list[tuple[float, float]]) -> None:
+        self.drawMultipleCircles(pos, 2, (240, 240, 240))
 
-        Args:
-            text (str): Title text
-        """
-        size = int((1 - self._scl) * self._sizes[0] * 0.2)
-        dy = int((1 - self._scl) * self._sizes[1] * 0.25)
-        dx = self._sizes[0] // 2
+    def drawWater(self, pos: list[tuple[float, float]]) -> None:
+        self.drawMultiplePoly(pos, (232, 232, 232))
 
-        font = ImageFont.truetype("src/Chivo-Light.ttf", size)
-        fill = (200, 200, 200)
+    def drawParks(self, pos: list[tuple[float, float]]) -> None:
+        self.drawMultiplePoly(pos, (55, 55, 55))
 
-        self._draw.text(
-            (dx, dy),
-            title,
-            fill=fill,
-            font=font,
-            align="center",
-            anchor="mt",
-        )
+    def drawBuildings(self, pos: list[tuple[float, float]]) -> None:
+        self.drawMultiplePoly(pos, (240, 240, 240))
+
+
+class MinimalisticCityImage(CityImage):
+    def __init__(self):
+        super().__init__(background_color=(15, 15, 15))
+        self._title_color = (200, 200, 200)
+        self._title_size = int((1 - self._scl) * self._sizes[0] * 0.2)

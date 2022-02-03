@@ -277,6 +277,12 @@ class MinimalMap(CityMap):
                 "topology": ["node"],
                 "color": "#ffb7ce",
             },
+            {
+                "name": "ATMs",
+                "tag": ["amenity=atm"],
+                "topology": ["node"],
+                "color": "#ffee93",
+            },
         ]
 
     def _isPositionValid(self, *_) -> bool:

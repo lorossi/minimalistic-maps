@@ -11,7 +11,7 @@ import logging
 from string import ascii_lowercase
 
 from citymap import RoundCityMap, MinimalMap
-from cityimage import CityImage, DarkCityImage
+from cityimage import CityImage, DarkCityImage, MinimalisticCityImage
 
 
 def main():
@@ -22,6 +22,9 @@ def main():
         "Paris, France": 3000,
         "Berlin, Germany": 3000,
         "Barcellona, Spain": 3000,
+        "Amsterdam, the Netherlands": 3000,
+        "Prague, Czechia": 3000,
+        "Budapest, Hungary": 3000,
     }
 
     for city, radius in cities.items():
@@ -41,15 +44,25 @@ def main():
         r.loadFeatures()
 
         logging.info("Creating image")
-        i = CityImage()
-        i.drawTrees(r.trees)
-        i.drawWater(r.water)
-        i.drawParks(r.parks)
-        i.drawBuildings(r.buildings)
+        m = CityImage()
+        m.drawTrees(r.trees)
+        m.drawWater(r.water)
+        m.drawParks(r.parks)
+        m.drawBuildings(r.buildings)
 
-        i.addTitle(city)
+        m.drawTitle(city)
         logging.info(f"Saving image {filename}")
-        i.save(f"output/{filename}-minimal.png")
+        m.save(f"output/{filename}-minimal.png")
+
+        d = DarkCityImage()
+        d.drawTrees(r.trees)
+        d.drawWater(r.water)
+        d.drawParks(r.parks)
+        d.drawBuildings(r.buildings)
+
+        d.drawTitle(city)
+        logging.info(f"Saving image {filename} dark")
+        d.save(f"output/{filename}-minimal-dark.png")
 
         logging.info(f"Creating minimal map for {city}")
         m = MinimalMap(city)
@@ -62,11 +75,11 @@ def main():
             title = f"{city} and its {len(coords)} {tag}"
             fill = m.getColor(tag)
             logging.info(f"Creating image with {tag}: found {len(coords)}")
-            i = DarkCityImage()
+            i = MinimalisticCityImage()
             i.drawMultipleCircles(coords, fill=fill, radius=10)
-            i.addTitle(title)
-            logging.info(f"Saving image {filename}-{tag}")
-            i.save(f"output/{filename}-{tag}.png")
+            i.drawTitle(title)
+            logging.info(f"Saving image {filename}-{tag.replace(' ',  '-')}")
+            i.save(f"output/{filename}-{tag.replace(' ',  '-')}.png")
 
 
 if __name__ == "__main__":
