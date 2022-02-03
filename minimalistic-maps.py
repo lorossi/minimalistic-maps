@@ -19,7 +19,7 @@ def main():
 
     cities = {
         "Milano, Italia": 3000,
-        "Paris, France": 5000,
+        "Paris, France": 3000,
         "Berlin, Germany": 3000,
         "Barcellona, Spain": 3000,
     }
