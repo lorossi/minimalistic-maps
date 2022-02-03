@@ -21,8 +21,8 @@ class CityMap:
         self._features_list = []
 
         # request timing
-        self._timeout = 10
-        self._try_again = 30
+        self._timeout = 120
+        self._try_again = 10
         # initialize instances
         self._nominatim = Nominatim()
         self._overpass = Overpass()
@@ -245,37 +245,37 @@ class MinimalMap(CityMap):
                 "name": "benches",
                 "tag": ["amenity=bench"],
                 "topology": ["node"],
-                "color": "#82cbb2",  # pale teal
+                "color": "#cb99c9",
             },
             {
                 "name": "traffic signals",
                 "tag": ["traffic_signals"],
                 "topology": ["node"],
-                "color": "#f3d3d9",  # light red
+                "color": "#ff6961",
             },
             {
                 "name": "water fountains",
                 "tag": ["amenity=drinking_water"],
                 "topology": ["node"],
-                "color": "#bbe4ea",  # ice pack
+                "color": "#89cff0",
             },
             {
                 "name": "trees",
                 "tag": ["natural=tree"],
                 "topology": ["node"],
-                "color": "#b6ffbb",  # light mint
+                "color": "#77dd77",
             },
             {
                 "name": "bars",
                 "tag": ["amenity=bar"],
                 "topology": ["node"],
-                "color": "#c0a2c7",  # pale grape
+                "color": "#ca9bf7",
             },
             {
                 "name": "restaurants",
                 "tag": ["amenity=restaurant"],
                 "topology": ["node"],
-                "color": "#bc987e",  # pale taupe
+                "color": "#ffb7ce",
             },
         ]
 
