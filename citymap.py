@@ -22,7 +22,7 @@ class CityMap:
 
         # request timing
         self._timeout = 10
-        self._try_again = 10
+        self._try_again = 30
         # initialize instances
         self._nominatim = Nominatim()
         self._overpass = Overpass()
@@ -112,11 +112,12 @@ class CityMap:
 
     def _isPositionValid(self, *_) -> bool:
         """Is the provided position valid?
+        Let's just say that the position is valid. The actual check is delegated to the subclasses.
 
         Returns:
             bool:
         """
-        raise NotImplementedError
+        return True
 
     def _queryOSM(self, **kwargs) -> None:
         """Query OSM and load data into self._elements_dict
@@ -213,10 +214,11 @@ class CityMap:
                         shape = shape[0]
 
                     # filter coords and convert to xy
+                    # sometimes coords are not lists? I don't understand why
                     coords = [
                         self._coordsToXY(*s[::-1])
                         for s in shape
-                        if self._isPositionValid(*s[::-1])
+                        if isinstance(s, list) and self._isPositionValid(*s[::-1])
                     ]
 
                     # sometimes the coords list might be empty
@@ -239,37 +241,63 @@ class MinimalMap(CityMap):
     def __init__(self, city: str):
         super().__init__(city)
         self._features_list = [
-            {"name": "benches", "tag": ["amenity=bench"], "topology": ["node"]},
+            {
+                "name": "benches",
+                "tag": ["amenity=bench"],
+                "topology": ["node"],
+                "color": "#82cbb2",  # pale teal
+            },
             {
                 "name": "traffic signals",
                 "tag": ["traffic_signals"],
                 "topology": ["node"],
+                "color": "#f3d3d9",  # light red
             },
             {
                 "name": "water fountains",
                 "tag": ["amenity=drinking_water"],
                 "topology": ["node"],
+                "color": "#bbe4ea",  # ice pack
             },
             {
                 "name": "trees",
                 "tag": ["natural=tree"],
                 "topology": ["node"],
+                "color": "#b6ffbb",  # light mint
             },
             {
                 "name": "bars",
                 "tag": ["amenity=bar"],
                 "topology": ["node"],
+                "color": "#c0a2c7",  # pale grape
             },
             {
                 "name": "restaurants",
                 "tag": ["amenity=restaurant"],
                 "topology": ["node"],
+                "color": "#bc987e",  # pale taupe
             },
         ]
 
     def _isPositionValid(self, *_) -> bool:
-        "All positions are valid in the minimal map. There's no need to check if they are in bbox"
+        """
+        All positions are valid in the minimal map. There's no need to check if they are in bbox.
+        This is redundant and probably unnecessary, but I wouldn't know how to change this."""
         return True
+
+    def getColor(self, feature: str) -> str:
+        """Returns color relative to feature.
+
+        Args:
+            feature (str): Feature in class
+
+        Returns:
+            str: Feature color¨
+        """
+        for f in self._features_list:
+            if f["name"] == feature:
+                return f.get("color")
+        return None
 
 
 class RoundCityMap(CityMap):

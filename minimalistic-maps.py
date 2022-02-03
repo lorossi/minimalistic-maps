@@ -20,8 +20,8 @@ def main():
 
     cities = {
         "Milano, Italia": 3000,
-        "Paris, France": 3000,
-        "Oslo, Norway": 3000,
+        "Paris, France": 5000,
+        "Berlin, Germany": 3000,
         "Barcellona, Spain": 3000,
     }
 
@@ -59,23 +59,12 @@ def main():
         logging.info("Loading features")
         m.loadFeatures()
 
-        colors = [
-            "#FF355E",
-            "#FF9933",
-            "#FF6037",
-            "#FFFF66",
-            "#66FF66",
-            "#50BFE6",
-            "#FF00CC",
-        ]
-        shuffle(colors)
-
         for tag, coords in m.circular_features.items():
-
             title = f"{city} and its {len(coords)} {tag}"
+            fill = m.getColor(tag)
             logging.info(f"Creating image with {tag}: found {len(coords)}")
             i = DarkCityImage()
-            i.drawMultipleCircles(coords, fill=colors.pop(), radius=10)
+            i.drawMultipleCircles(coords, fill=fill, radius=10)
             i.addTitle(title)
             logging.info(f"Saving image {filename}-{tag}")
             i.save(f"output/{filename}-{tag}.png")
