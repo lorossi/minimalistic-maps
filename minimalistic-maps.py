@@ -9,7 +9,6 @@ Reference:
 
 import logging
 from string import ascii_lowercase
-from random import shuffle
 
 from citymap import RoundCityMap, MinimalMap
 from cityimage import CityImage, DarkCityImage
