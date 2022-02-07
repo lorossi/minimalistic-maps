@@ -15,8 +15,15 @@ from cityimage import CityImage, DarkCityImage, MinimalisticCityImage
 
 
 def main():
+    # logging config
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s: %(message)s",
+    )
+
     logging.info("Script started")
 
+    # list of cities and their radii
     cities = {
         "Milano, Italia": 3000,
         "Paris, France": 3000,
@@ -28,6 +35,7 @@ def main():
     }
 
     for city, radius in cities.items():
+        # format filename
         filename = "".join(
             [
                 c
@@ -36,6 +44,7 @@ def main():
             ]
         )
 
+        # load the city and its features
         logging.info(f"Creating round map for {city}")
         r = RoundCityMap(city, radius)
         logging.info("Loading city")
@@ -43,6 +52,7 @@ def main():
         logging.info("Loading features")
         r.loadFeatures()
 
+        # create the first circular image
         logging.info("Creating image")
         m = CityImage()
         m.drawTrees(r.trees)
@@ -54,6 +64,7 @@ def main():
         logging.info(f"Saving image {filename}")
         m.save(f"output/{filename}-minimal.png")
 
+        # create the second circular image (black and white)
         d = DarkCityImage()
         d.drawTrees(r.trees)
         d.drawWater(r.water)
@@ -65,6 +76,7 @@ def main():
         d.save(f"output/{filename}-minimal-dark.png")
 
         logging.info(f"Creating minimal map for {city}")
+        # create the minimal map for the city
         m = MinimalMap(city)
         logging.info("Loading city")
         m.loadCity()
@@ -72,6 +84,7 @@ def main():
         m.loadFeatures()
 
         for tag, coords in m.circular_features.items():
+            # create a minimal map for each feature in the city
             title = f"{city} and its {len(coords)} {tag}"
             fill = m.getColor(tag)
             logging.info(f"Creating image with {tag}: found {len(coords)}")
@@ -83,8 +96,4 @@ def main():
 
 
 if __name__ == "__main__":
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s - %(levelname)s: %(message)s",
-    )
     main()

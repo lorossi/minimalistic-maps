@@ -21,8 +21,8 @@ class CityMap:
         self._features_list = []
 
         # request timing
-        self._timeout = 120
-        self._try_again = 10
+        self._timeout = 300
+        self._try_again = 30
         # initialize instances
         self._nominatim = Nominatim()
         self._overpass = Overpass()
@@ -325,7 +325,14 @@ class RoundCityMap(CityMap):
             },
             {
                 "name": "water",
-                "tag": ["natural=water"],
+                "tag": [
+                    "natural=water",
+                    "water",
+                    "waterway",
+                    "leisure=marinas",
+                    "place=sea",
+                    "place=ocean",
+                ],
                 "topology": ["way"],
             },
             {
