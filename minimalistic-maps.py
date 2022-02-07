@@ -85,7 +85,8 @@ def main():
 
         for tag, coords in m.circular_features.items():
             # create a minimal map for each feature in the city
-            title = f"{city} and its {len(coords)} {tag}"
+            city_name = city.split(",")[0]
+            title = f"{city_name} and its {len(coords)} {tag}"
             fill = m.getColor(tag)
             logging.info(f"Creating image with {tag}: found {len(coords)}")
             i = MinimalisticCityImage()
